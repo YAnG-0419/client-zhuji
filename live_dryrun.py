@@ -26,10 +26,17 @@ def ros_snapshot_command(client_dir, snapshot_path, seconds=2.0):
 
 def ros_environment(base=None):
     environment = dict(os.environ if base is None else base)
+    python_path = "/opt/ros/foxy/lib/python3.8/site-packages"
+    library_path = "/opt/ros/foxy/lib"
+    if environment.get("PYTHONPATH"):
+        python_path += os.pathsep + environment["PYTHONPATH"]
+    if environment.get("LD_LIBRARY_PATH"):
+        library_path += os.pathsep + environment["LD_LIBRARY_PATH"]
     environment.update({
         "FASTRTPS_DEFAULT_PROFILES_FILE":
             "/opt/ros-bringup/fastdds_config_udp_only.xml",
         "ROS_DOMAIN_ID": "0", "ROS_LOCALHOST_ONLY": "0",
+        "PYTHONPATH": python_path, "LD_LIBRARY_PATH": library_path,
     })
     return environment
 
