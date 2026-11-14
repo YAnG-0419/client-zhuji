@@ -150,7 +150,8 @@ class XFlowClient:
         if self.infer_budget is not None and self.infer_count >= self.infer_budget:
             raise XFlowError("local inference-call budget exhausted")
         head = self._validate_image(head_rgb, image_space, "head_rgb")
-        history = self._validate_image(history_rgb, image_space, "history_rgb")
+        history = (None if history_rgb is None else
+                   self._validate_image(history_rgb, image_space, "history_rgb"))
         points = _array(keypoints, np.float32, (2, 21, 3), "keypoints")
         valid = None
         if keypoint_valid is not None:
@@ -158,8 +159,9 @@ class XFlowClient:
             if np.any((valid != 0) & (valid != 1)):
                 raise ValueError("keypoint_valid must contain only 0 or 1")
         request_id = uuid.uuid4().hex
-        observation = {"head_rgb": head, "history_rgb": history,
-                       "keypoints": points}
+        observation = {"head_rgb": head, "keypoints": points}
+        if history is not None:
+            observation["history_rgb"] = history
         if valid is not None:
             observation["keypoint_valid"] = valid
         message = {

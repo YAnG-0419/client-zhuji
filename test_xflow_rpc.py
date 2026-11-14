@@ -92,6 +92,22 @@ class XFlowRpcTests(unittest.TestCase):
         self.assertEqual(client.infer_count, 1)
         client.close(); server.finish()
 
+    def test_shadow_request_may_omit_history_image(self):
+        def response(request):
+            self.assertNotIn("history_rgb", request["observation"])
+            return infer_response(request)
+        server = ScriptedServer([
+            ("info", info_response()),
+            ("reset", lambda request: {"request_id": request["request_id"],
+                                         "session_id": "session-shadow"}),
+            ("infer", response),
+        ])
+        client = XFlowClient(sock=server.client)
+        client.info(); client.reset()
+        values = sample(); values["history_rgb"] = None
+        client.infer(**values)
+        client.close(); server.finish()
+
     def test_deployment_pin_rejects_different_model(self):
         server = ScriptedServer([("info", info_response("changed"))])
         client = XFlowClient(sock=server.client, deployment_id="expected")

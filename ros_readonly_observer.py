@@ -38,7 +38,7 @@ def stamp_ns(header):
 class ReadOnlyObserver(Node):
     def __init__(self):
         super().__init__("xflow_readonly_observer")
-        self.buffer = ObservationBuffer(horizon_s=1.5)
+        self.buffer = ObservationBuffer(horizon_s=4.0)
         # All subscriptions use best-effort/volatile sensor QoS.  This is
         # compatible with current reliable publishers and historical Wuji QoS.
         self.create_subscription(Image, TOPICS["image"], self._image,
@@ -91,6 +91,10 @@ class ReadOnlyObserver(Node):
                  pose.orientation.z, pose.orientation.w]
         self._guard(lambda: self.buffer.add_state(stream, stamp_ns(msg.header), value))
 
+    def missing_topics(self):
+        return [topic for topic in TOPICS.values()
+                if self.count_publishers(topic) < 1]
+
 
 def spin_for(node, seconds):
     deadline = time.monotonic() + seconds
@@ -129,11 +133,54 @@ def save_image_samples(node, destination, config_path, archive_path):
     return report
 
 
+def save_snapshot_npz(node, destination, config_path, archive_path):
+    """Serialize one read-only shadow sample; never creates a publisher."""
+    missing = node.missing_topics()
+    if missing:
+        raise RuntimeError("missing topic publishers: " + ", ".join(missing))
+    snapshot = node.buffer.snapshot(allow_missing_history=True,
+                                    history_clock="execution")
+    camera_gate = validate_camera_info(
+        snapshot["camera_info"], camera_info_from_json(archive_path))
+    states = snapshot["states"]; names = snapshot["state_names"]
+    arrays = {
+        "sample_ns": np.asarray(snapshot["sample_ns"], np.int64),
+        "head_rgb": snapshot["head_rgb"],
+        "arm_joint_names": np.asarray(names["arm_joints"]),
+        "arm_joint_positions_rad": states["arm_joints"],
+        "camera_K": np.asarray(snapshot["camera_info"]["K"], np.float64),
+        "camera_D": np.asarray(snapshot["camera_info"]["D"], np.float64),
+        "camera_width": np.asarray(snapshot["camera_info"]["width"]),
+        "camera_height": np.asarray(snapshot["camera_info"]["height"]),
+        "camera_frame_id": np.asarray(snapshot["camera_info"]["frame_id"]),
+        "camera_distortion_model": np.asarray(
+            snapshot["camera_info"]["distortion_model"]),
+    }
+    if snapshot["history_rgb"] is not None:
+        arrays["history_rgb"] = snapshot["history_rgb"]
+    for side in ("left", "right"):
+        arrays[side + "_sdk_eef_xyzw"] = states[side + "_eef"]
+        arrays[side + "_wuji_q20_rad"] = states[side + "_wuji"]
+        arrays[side + "_wuji_joint_names"] = np.asarray(names[side + "_wuji"])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(destination, **arrays)
+    return {"completed": True, "snapshot_npz": str(destination),
+            "sample_ns": snapshot["sample_ns"],
+            "history_clock": snapshot["history_clock"],
+            "history_transmitted": snapshot["history_rgb"] is not None,
+            "history_missing_reason": snapshot["history_missing_reason"],
+            "measured_camera_fps": snapshot["measured_camera_fps"],
+            "camera_info_gate": camera_gate,
+            "alignment_error_ns": snapshot["alignment_error_ns"],
+            "hardware_commands_sent": 0, "publishers_created": 0}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seconds", type=float, default=2.0)
     parser.add_argument("--image-sample-dir", type=Path)
     parser.add_argument("--snapshot-report", type=Path)
+    parser.add_argument("--snapshot-npz", type=Path)
     parser.add_argument("--config", type=Path,
                         default=Path(__file__).with_name("deployment_config.json"))
     parser.add_argument("--camera-archive", type=Path,
@@ -151,7 +198,7 @@ def main():
         # missing stream (currently Wuji state), not time spent saving PNGs.
         if args.snapshot_report:
             try:
-                snapshot = node.buffer.snapshot()
+                snapshot = node.buffer.snapshot(history_clock="wall")
                 result = {"completed": True, "sample_ns": snapshot["sample_ns"],
                           "alignment_error_ns": snapshot["alignment_error_ns"],
                           "hardware_commands_sent": 0}
@@ -166,6 +213,17 @@ def main():
         if args.image_sample_dir:
             print(json.dumps(save_image_samples(node, args.image_sample_dir,
                                                 args.config, args.camera_archive), indent=2))
+        if args.snapshot_npz:
+            try:
+                result = save_snapshot_npz(node, args.snapshot_npz,
+                                           args.config, args.camera_archive)
+            except BaseException as error:
+                result = {"completed": False,
+                          "error": type(error).__name__ + ": " + str(error),
+                          "missing_topics": node.missing_topics(),
+                          "hardware_commands_sent": 0, "publishers_created": 0}
+                exit_code = 2
+            print(json.dumps(result, indent=2))
     finally:
         node.destroy_node(); rclpy.shutdown()
     return exit_code
