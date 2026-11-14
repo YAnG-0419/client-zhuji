@@ -72,10 +72,31 @@
     "supervision_period_s": 0.02,
     "handoff_blend_s": 0.1,
     "planning_reserve_s": 0.15,
+    "latency_policy": "sync_hold",
+    "history_clock": "execution",
+    "execution_history_frames": 16,
     "max_response_age_s": 2.0
   },
+  "observation": {
+    "buffer_seconds": 4.0,
+    "history_tolerance_policy": "half_recent_median_period_clipped_16p7_to_50ms",
+    "stationary_max_eef_translation_m": 0.002,
+    "stationary_max_eef_rotation_rad": 0.017453292519943295,
+    "stationary_max_hand_joint_rad": 0.05
+  },
+  "execution": {
+    "anchor": {
+      "mode": "decay",
+      "decay_steps": 12,
+      "apply_to_hand_q": true
+    },
+    "smoothing_window": 5,
+    "speed_policy": "reject",
+    "hand_joint_speed_limit_rad_s": 1.0,
+    "arm_joint_speed_limit_rad_s": 1.0
+  },
   "hand_retarget": {
-    "root_mode": "free_root",
+    "root_mode": "auto",
     "max_nfev": 300,
     "weights": {"other": 0.05, "wrist": 0.1, "tips": 1.0},
     "temporal_first": 0.0001,
