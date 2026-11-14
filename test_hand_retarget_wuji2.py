@@ -1,0 +1,104 @@
+import unittest
+
+import numpy as np
+from scipy.spatial.transform import Rotation
+
+from hand_retarget_wuji2 import (MODES, PALM_ALIGNMENT_POINTS, PARENTS,
+                                 Wuji2StreamingRetargeter, pose_error)
+
+
+def root_pose():
+    value = np.eye(4)
+    value[:3, :3] = Rotation.from_euler("xyz", [0.25, -0.18, 0.4]).as_matrix()
+    value[:3, 3] = [0.31, -0.12, 0.72]
+    return value
+
+
+def camera_points(solver, q, root):
+    return solver.hand.fk(q) @ root[:3, :3].T + root[:3, 3]
+
+
+class HandRetargetTests(unittest.TestCase):
+    def test_urdf_has_only_one_truly_root_fixed_keypoint(self):
+        solver = Wuji2StreamingRetargeter("left")
+        _, jacobian = solver.hand.fk(solver.hand.neutral, True)
+        moving = np.max(np.abs(jacobian), axis=(1, 2)) > 1e-10
+        self.assertEqual(np.flatnonzero(~moving).tolist(), [0])
+        self.assertTrue(moving[PALM_ALIGNMENT_POINTS].all())
+
+    def exact_case(self, side, mode):
+        solver = Wuji2StreamingRetargeter(side, mode, thresholds={
+            "max_joint_step_rad": 1.0,
+            "max_root_translation_step_m": 1.0,
+            "max_root_rotation_step_rad": 2.0,
+        })
+        rng = np.random.default_rng(4 if side == "left" else 8)
+        q = solver.hand.lo * 0.2 + solver.hand.hi * 0.2
+        q += rng.uniform(-0.08, 0.08, 20)
+        q = np.clip(q, solver.hand.lo + 0.1, solver.hand.hi - 0.1)
+        root = root_pose()
+        points = camera_points(solver, q, root)
+        solver.begin_chunk(q, root)
+        result = solver.retarget_frame(points, 1_000_000_000, normalize=False)
+        self.assertTrue(result["accepted"], result["diagnostic"])
+        translation, angle = pose_error(result["cam_T_root"], root)
+        self.assertLess(translation, 1e-4)
+        self.assertLess(angle, np.deg2rad(0.05))
+        self.assertLess(result["diagnostic"]["all_rmse_m"], 1e-4)
+
+    def test_exact_wuji_fk_recovers_random_root_and_joints(self):
+        for side in ("left", "right"):
+            for mode in MODES:
+                with self.subTest(side=side, mode=mode):
+                    self.exact_case(side, mode)
+
+    def test_human_bone_lengths_normalize_and_both_modes_converge(self):
+        for mode in MODES:
+            solver = Wuji2StreamingRetargeter("left", mode, thresholds={
+                "max_joint_step_rad": 1.0,
+                "max_root_translation_step_m": 1.0,
+                "max_root_rotation_step_rad": 2.0,
+            })
+            q = np.clip(np.linspace(-0.2, 0.35, 20), solver.hand.lo + 0.05,
+                        solver.hand.hi - 0.05)
+            root = root_pose()
+            exact = camera_points(solver, q, root)
+            human = exact.copy()
+            for index in range(1, 21):
+                parent = PARENTS[index]
+                human[index] = human[parent] + 1.18 * (exact[index] - exact[parent])
+            solver.begin_chunk(q, root)
+            result = solver.retarget_frame(human, 1_000_000_000, normalize=True)
+            self.assertTrue(result["accepted"], result["diagnostic"])
+            self.assertLess(result["diagnostic"]["tip_rmse_m"], 0.003)
+
+    def test_chunk_boundary_resets_time_and_rejected_frame_does_not_raise(self):
+        solver = Wuji2StreamingRetargeter("right", "free_root")
+        q = solver.hand.neutral.copy()
+        root = root_pose()
+        points = camera_points(solver, q, root)
+        solver.begin_chunk(q, root)
+        self.assertTrue(solver.retarget_frame(points, 100, normalize=False)["accepted"])
+        rejected = solver.retarget_frame(np.zeros((21, 3)), 101)
+        self.assertFalse(rejected["accepted"])
+        self.assertIn("degenerate", rejected["diagnostic"]["reason"])
+        solver.begin_chunk(q, root)
+        self.assertTrue(solver.retarget_frame(points, 1, normalize=False)["accepted"])
+
+    def test_threshold_rejection_preserves_previous_state(self):
+        solver = Wuji2StreamingRetargeter("left", "free_root",
+                                          thresholds={"max_joint_step_rad": 1e-5})
+        q = solver.hand.neutral.copy()
+        root = root_pose()
+        solver.begin_chunk(q, root)
+        first = camera_points(solver, q, root)
+        self.assertTrue(solver.retarget_frame(first, 1, normalize=False)["accepted"])
+        moved = np.clip(q + 0.15, solver.hand.lo + 0.01, solver.hand.hi - 0.01)
+        answer = solver.retarget_frame(camera_points(solver, moved, root), 2, normalize=False)
+        self.assertFalse(answer["accepted"])
+        np.testing.assert_allclose(solver.q, q, atol=1e-6)
+
+
+if __name__ == "__main__":
+    unittest.main()
+

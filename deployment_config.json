@@ -32,6 +32,20 @@
     "planning_reserve_s": 0.15,
     "max_response_age_s": 2.0
   },
+  "hand_retarget": {
+    "root_mode": "free_root",
+    "max_nfev": 300,
+    "palm_alignment_point_indices": [1, 5, 9, 13, 17],
+    "palm_alignment_note": "URDF FK/Jacobian proves only point 0 is root-fixed; five palm points move with MCP flex, so kabsch_fixed_root alternates current-q Kabsch and fixed-root q solve",
+    "thresholds": {
+      "max_tip_rmse_m": 0.02,
+      "max_all_rmse_m": 0.015,
+      "max_root_keypoint_error_m": 0.015,
+      "max_joint_step_rad": 0.35,
+      "max_root_translation_step_m": 0.08,
+      "max_root_rotation_step_rad": 0.7853981633974483
+    }
+  },
   "runtime_policy": {
     "one_planning_request": true,
     "one_hardware_sender": true,
