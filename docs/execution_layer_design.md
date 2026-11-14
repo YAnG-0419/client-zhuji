@@ -11,24 +11,37 @@ Robot、Hands、ServoP、ServoJ、Wuji command publisher 或 `request_emgy_stop`
 规划器只输出 `TimedChunk`；所有坐标、限位、速度、IK、时效检查通过后，队列才接受它；
 只有发送器拥有控制会话。规划线程、ROS 回调和推理客户端永远不能直接发布硬件目标。
 
-每次最多一项推理/规划任务。新段用 `replace_future` 只替换尚未执行的未来，交接区间使用
-同一时钟的五次 smoothstep、XYZ/手关节线性插值和四元数最短弧 SLERP。`initial_lead` 必须
-覆盖推理 p95、重定向、IK、安全检查和调度 margin；当前配置保留 150 ms planning reserve，
-真实值要依据在线持续测量重新认证。响应身份、deployment id、session/sample、图像空间、
-时间表或检查任一不一致，整段不可进入队列。
+每次最多一项推理/规划任务。默认周期是严格的同步周期：**观测 → 保持采样姿态 → 推理 →
+下发前静止检查 → 规划 → 执行完整 32 步 → 重新观测**。推理 RTT 不从 1.0667 s 轨迹中
+扣除；`exec_start = dispatch_time + planning_reserve`，不会再使用不可实现的
+`sample_time + 150 ms`。下发前实测相对采样值超过 SDK EEF 2 mm / 1° 或任一手关节
+0.05 rad，整段拒绝。离线产物只能记录 `stationary_assumption=unverified_offline`。
+
+新段用 `replace_future` 只替换尚未执行的未来，交接区间使用同一时钟的五次 smoothstep、
+XYZ/手关节线性插值和四元数最短弧 SLERP。响应身份、deployment id、session/sample、图像
+空间、时间表或检查任一不一致，整段不可进入队列。
 
 ## 启动与接管
 
-未来实现复用 `replay_hand` 已验证的分阶段流程：保持 Wuji 当前实测姿态；使用认证的
-MoveJ/ServoJ 接近第一个 EEF；确认手臂静止、反馈健康且首段已在队列中；再由单一发送线程
-切换至 ServoP。首段从实测状态到第一预测点做有限时 startup blend，不能把第一预测点当成
-已达到的状态，也不能用上次命令冒充实测 q/EEF。
+未来实现复用 `replay_hand` 已验证的分阶段流程，但首段不再用额外 startup blend 掩盖模型
+偏差。规划器先对手根平移、相对首帧的旋转切空间和 q20 做窗口 5 的轻度平滑，再以手根
+局部坐标右乘偏移锚定：第 0 步精确等于实测根和 q20，默认 12 个 30 Hz 步用 smoothstep
+衰减到原拟合轨迹。`constant` 仅用于对比，`none` 会保留真实首跳。humanhand 自动使用
+`free_root`；`kabsch_fixed_root` 只留给 realrobot/显式诊断。
 
 接管后，臂发送线程按控制器要求的固定周期从 50 Hz 已验收 EEF 轨迹插值，手保持 50 Hz。
 用户已确定 `hh_*` 的 32 个输出点按 32 个 30 Hz 帧解释：第 `i` 点的截止时刻为
 `exec_start + (i+1)/30 s`，32 点占 1.0667 s；没有 0.25 speed-scale 入口。模型原生
-`keypoint_time_s` 只保留作诊断对照，不作为默认发送时钟。历史图仍按服务 info 的 4 个
-相机帧（约 0.133 s）选取，不因执行时钟改成 16 帧。
+`keypoint_time_s` 只保留作诊断对照，不作为默认发送时钟。历史图按**执行时钟**取 16 个
+执行周期前（0.533 s）；同步保持区间不推进执行时钟。离线 bag 把墙钟视为连续执行时钟；
+只规划的影子模式没有执行历史，因此省略 `history_rgb` 并记录原因。环形缓冲至少覆盖 4 s，
+历史容差取近期相机周期中位数的一半并限制在 16.7–50 ms。
+
+速度门必须在轨迹前显式拼接采样实测状态，覆盖“实测 → step0”。手 q20 和离线 Pinocchio
+q16 均以 1.0 rad/s 为上限，同时记录 SDK EEF 线/角速度。默认 `reject` 在任一门失败时拒绝
+整段；`clamp_report` 只生成裁剪计数和幅度，产物始终不可执行。50 Hz 规划输出是双臂 SDK
+EEF（位置 + xyzw 四元数）；双手输出是固件顺序 q20，拟议发送周期同为 20 ms。本文仍未
+实现任何 ServoP 或手部 command sender。
 
 ## 队列、过期与停止
 

@@ -1,4 +1,4 @@
-# TRON2 + Wuji2 XFlow kp21 client（阶段一）
+# TRON2 + Wuji2 XFlow kp21 client（第二轮 dry-run）
 
 本目录已完成“在线数据链 + 离线 dry-run”，但**没有硬件发送入口**。代码不会启动驱动、
 发布控制话题、调用 ServoP/ServoJ/Wuji command 或紧急停止。所有报告都固定记录
@@ -13,14 +13,16 @@
 - `observation_buffer.py`、`ros_readonly_observer.py`：fail-closed 的只读 ROS 环形缓冲；
 - `bag_observation_source.py`：sqlite `mode=ro` 的离线 bag 数据源；
 - `timing_policy.py`：默认 32 点 × 30 Hz = 1.0667 s，不存在 0.25 倍速入口；
-- `online_dryrun.py`：fake-gt/remote、双根模式、50 Hz 重采样、EEF_BOX、Pinocchio IK 和
+- `execution_postprocess.py`：局部右乘锚定、窗口平滑、静止检查、含首跳的速度门；
+- `online_dryrun.py`：fake-gt/remote/cache replay、多快照、50 Hz 重采样、Pinocchio IK 和
   1 rad/s 速度审计；
+- `live_dryrun.py`：系统 ROS 只读快照进程 + pixi 规划进程；缺话题时在 infer 前退出；
 - `relay_mac.py`：Mac 上两条仅绑定 loopback 的 SSH 中继；
 - `docs/execution_layer_design.md`：未来发送层设计，不含发送代码。
 
-时间约定按用户最新决定：`hh_*` 返回的第 1…32 点分别占一个 30 Hz 发送帧，deadline 为
-`exec_start + (1…32)/30 s`。服务端原生 1/120…32/120 s 仅保留为诊断模式。历史图仍严格
-按 info 的 4 个相机帧选取。
+时间约定按用户最新决定：`hh_*` 返回的第 1…32 点分别占一个 30 Hz 执行帧，deadline 为
+`dispatch + reserve + (1…32)/30 s`。服务端原生 1/120…32/120 s 仅保留为诊断模式。
+默认同步保持推理期间的采样姿态，并按执行时钟取 16 帧（0.533 s）前的历史图。
 
 常用离线命令：
 
@@ -33,6 +35,10 @@ cd /home/guest/pengyang/client
   --source testdata/episode023_i800_state.npz \
   --server fake-gt --root-mode both \
   --time-scale frame_per_step_30hz --steps 32
+
+# 影子模式：只订阅、推理、规划和保存；无 publisher/sender。
+/home/guest/.pixi/bin/pixi run --locked python live_dryrun.py \
+  --task flower --cycles 1
 ```
 
 旧 Orbbec/replay camera chunk 必须显式选 `board_transfer`；实时 zhuji 图像/关键点必须选
@@ -44,7 +50,7 @@ cd /home/guest/pengyang/client
   --chunk ../replay_robot/camera_trajectory_adc619f1_20261114/inputs/wuji2_camera_replay_trajectory.npz
 ```
 
-完整实现、测试、benchmark、通信和已知阻塞项见 `IMPLEMENTATION_REPORT.md`。当前不能进入
-硬件阶段：实时 `/wuji/*/joint_states` 没有 publisher；41.5° 外参仍标记未物理验收；两种
-远端图像路径的预测均出现 1 rad/s 速度门失败。
+第一轮报告见 `docs/IMPLEMENTATION_REPORT_R1.md`，第二轮结果见
+`docs/XFLOW_CLIENT_REPORT_R2.md`。当前不能进入硬件阶段：实时
+`/wuji/*/joint_states` 没有 publisher；真实多快照仍有 1 rad/s 速度门失败。
 
