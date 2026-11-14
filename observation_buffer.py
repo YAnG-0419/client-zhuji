@@ -20,15 +20,24 @@ def _immutable(value, dtype=None):
 
 class ObservationBuffer:
     """Stores epoch-header timestamps and separate monotonic receive times."""
-    def __init__(self, horizon_s=1.5, camera_fps=30.0):
-        if horizon_s < 1.0 or camera_fps <= 0:
-            raise ValueError("invalid observation buffer horizon/fps")
+    def __init__(self, horizon_s=4.0, camera_fps=30.0):
+        if horizon_s < 4.0 or camera_fps <= 0:
+            raise ValueError("observation buffer must cover at least 4 seconds")
         self.horizon_ns = int(round(horizon_s * 1e9))
         self.camera_fps = float(camera_fps)
         self.images = deque()
         self.states = {name: deque() for name in STATE_STREAMS}
         self.camera_info = None
         self.reader_error = None
+        self.execution_active = False
+        self.execution_elapsed_ns = 0
+        self._last_image_stamp_ns = None
+
+    def set_execution_active(self, active):
+        """Mark whether newly received image intervals advance execution time."""
+        if type(active) is not bool:
+            raise ValueError("execution_active must be bool")
+        self.execution_active = active
 
     def _trim(self, queue, newest_ns):
         cutoff = int(newest_ns) - self.horizon_ns
@@ -49,7 +58,11 @@ class ObservationBuffer:
             raise ValueError("image byte count differs from height*step")
         if self.images and stamp_ns <= self.images[-1][0]:
             raise ValueError("image header timestamp is not strictly increasing")
-        self.images.append((stamp_ns, receive_monotonic_ns, raw))
+        if self._last_image_stamp_ns is not None and self.execution_active:
+            self.execution_elapsed_ns += stamp_ns - self._last_image_stamp_ns
+        self._last_image_stamp_ns = stamp_ns
+        self.images.append((stamp_ns, receive_monotonic_ns, raw,
+                            int(self.execution_elapsed_ns)))
         self._trim(self.images, stamp_ns)
 
     def add_state(self, stream, stamp_ns, value, names=()):
@@ -70,9 +83,18 @@ class ObservationBuffer:
             raise RuntimeError(label + " has no samples")
         return min(queue, key=lambda item: abs(item[0] - target_ns))
 
-    def snapshot(self, history_offset_frames=4, state_tolerance_ns=10_000_000,
-                 history_tolerance_ns=20_000_000, max_receive_age_ns=150_000_000,
-                 now_monotonic_ns=None):
+    def _camera_timing(self):
+        if len(self.images) < 2:
+            return self.camera_fps, 50_000_000
+        periods = np.diff([item[0] for item in self.images])
+        median_ns = float(np.median(periods[-min(len(periods), 60):]))
+        tolerance_ns = int(np.clip(median_ns / 2.0, 16_700_000, 50_000_000))
+        return 1e9 / median_ns, tolerance_ns
+
+    def snapshot(self, history_offset_frames=16, state_tolerance_ns=10_000_000,
+                 history_tolerance_ns=None, max_receive_age_ns=150_000_000,
+                 now_monotonic_ns=None, history_clock="execution",
+                 allow_missing_history=False):
         if self.reader_error is not None:
             raise RuntimeError("observation reader failed: " + str(self.reader_error))
         if self.camera_info is None or not self.images:
@@ -83,10 +105,29 @@ class ObservationBuffer:
         now = time.monotonic_ns() if now_monotonic_ns is None else int(now_monotonic_ns)
         if now - current[1] > max_receive_age_ns:
             raise RuntimeError("latest image is stale by local monotonic receive time")
-        target_history_ns = current[0] - int(round(history_offset_frames / self.camera_fps * 1e9))
-        history = self._nearest(self.images, target_history_ns, "image history")
-        if history[0] == current[0] or abs(history[0] - target_history_ns) > history_tolerance_ns:
-            raise RuntimeError("required history image is unavailable")
+        measured_fps, dynamic_tolerance_ns = self._camera_timing()
+        tolerance_ns = (dynamic_tolerance_ns if history_tolerance_ns is None
+                        else int(history_tolerance_ns))
+        offset_ns = int(round(history_offset_frames / self.camera_fps * 1e9))
+        if history_clock == "execution":
+            target_coordinate = current[3] - offset_ns
+            history = min(self.images, key=lambda item: abs(item[3] - target_coordinate))
+            history_error_ns = abs(history[3] - target_coordinate)
+        elif history_clock == "wall":
+            target_coordinate = current[0] - offset_ns
+            history = self._nearest(self.images, target_coordinate, "image history")
+            history_error_ns = abs(history[0] - target_coordinate)
+        else:
+            raise ValueError("history_clock must be execution or wall")
+        history_reason = None
+        if (target_coordinate < 0 or history[0] == current[0]
+                or history_error_ns > tolerance_ns):
+            if not allow_missing_history:
+                raise RuntimeError("required %s-clock history image is unavailable"
+                                   % history_clock)
+            history = None
+            history_reason = ("no completed execution history" if history_clock == "execution"
+                              else "required wall-clock history unavailable")
         aligned = {}
         alignment_error_ns = {}
         names = {}
@@ -99,14 +140,21 @@ class ObservationBuffer:
             alignment_error_ns[stream] = delta
             names[stream] = item[2]
         current_rgb = np.frombuffer(current[2], dtype=np.uint8).reshape(480, 640, 3)
-        history_rgb = np.frombuffer(history[2], dtype=np.uint8).reshape(480, 640, 3)
-        current_rgb.setflags(write=False); history_rgb.setflags(write=False)
+        history_rgb = None
+        if history is not None:
+            history_rgb = np.frombuffer(history[2], dtype=np.uint8).reshape(480, 640, 3)
+            history_rgb.setflags(write=False)
+        current_rgb.setflags(write=False)
         return {
             "sample_ns": current[0],
             "receive_monotonic_ns": current[1],
             "head_rgb": current_rgb, "history_rgb": history_rgb,
-            "history_sample_ns": history[0],
-            "history_target_error_ns": abs(history[0] - target_history_ns),
+            "history_sample_ns": None if history is None else history[0],
+            "history_target_error_ns": None if history is None else history_error_ns,
+            "history_clock": history_clock,
+            "history_missing_reason": history_reason,
+            "history_tolerance_ns": tolerance_ns,
+            "measured_camera_fps": measured_fps,
             "states": aligned, "state_names": names,
             "alignment_error_ns": alignment_error_ns,
             "camera_info": self.camera_info,

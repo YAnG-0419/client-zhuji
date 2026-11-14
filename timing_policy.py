@@ -1,23 +1,13 @@
-"""Pure timestamp policy for XFlow keypoint chunks.
+"""Pure timestamp, latency, and history-clock policy for XFlow chunks.
 
-This module has no ROS, socket, or robot imports.  It deliberately separates
-the model's native prediction timestamps from the client execution policy:
+No ROS, socket, or robot API is imported here. The deployment default is a
+``sync_hold`` cycle: sample, hold while inference runs, then schedule all 32
+returned steps at 30 Hz from ``dispatch_ns + reserve``. Native model time is
+kept only for a diagnostic realtime-cutoff comparison.
 
-``frame_per_step_30hz`` (default)
-    Execute every returned step for one 30 Hz period.  For a 32-step chunk,
-    deadlines are ``exec_start + (1..32) / 30`` seconds.
-
-``native_time`` (diagnostic only)
-    Preserve ``keypoint_time_s`` from the service info and anchor it at the
-    observation sample timestamp.  It is retained for comparisons, not as the
-    default deployment schedule.
-
-The model history image contract remains unchanged.  A humanhand model still
-receives the frame four camera periods before the current image.  Under the
-frame-per-step execution interpretation that span is *equivalent* to sixteen
-30 Hz execution periods; this 16-period/0.533 s value is reported
-only as an execution-timescale diagnostic and must not be used to select the
-history image.
+For ``frame_per_step_30hz`` the history image is selected on the *execution*
+clock 16 execution periods (0.533 s) before the head image. Time spent in a
+synchronous hold does not advance that clock.
 """
 from __future__ import annotations
 
@@ -28,9 +18,15 @@ from typing import Any, Dict, Optional, Tuple
 
 FRAME_PER_STEP_30HZ = "frame_per_step_30hz"
 NATIVE_TIME = "native_time"
+SYNC_HOLD = "sync_hold"
+REALTIME_CUTOFF = "realtime_cutoff"
+EXECUTION_CLOCK = "execution"
+WALL_CLOCK = "wall"
 DEFAULT_MODE = FRAME_PER_STEP_30HZ
+DEFAULT_LATENCY_POLICY = SYNC_HOLD
 DEFAULT_STEPS = 32
 EXECUTION_FPS = 30.0
+EXECUTION_HISTORY_FRAMES = 16
 
 
 def _finite_float(value: Any, name: str) -> float:
@@ -53,7 +49,7 @@ class ModelTiming:
     @classmethod
     def from_info(cls, model_info: Dict[str, Any]) -> "ModelTiming":
         contract = str(model_info.get("contract", ""))
-        fps = _finite_float(model_info.get("fps"), "model fps")
+        fps = _finite_float(model_info.get("fps", 30.0), "model fps")
         history = model_info.get("history_offset_frames")
         try:
             times = tuple(float(value) for value in model_info.get("keypoint_time_s"))
@@ -72,26 +68,24 @@ class ModelTiming:
         return cls(contract=contract, fps=fps, history_offset_frames=history,
                    keypoint_time_s=times)
 
-    @property
-    def history_capture_offset_s(self) -> float:
-        """Actual history-image offset required by the inference contract."""
-        return self.history_offset_frames / self.fps
-
-    def history_report(self) -> dict:
-        execution_period = 1.0 / EXECUTION_FPS
-        native_first_step = float(self.keypoint_time_s[0])
-        execution_to_native_increment_ratio = execution_period / native_first_step
-        equivalent_span_s = (
-            self.history_capture_offset_s * execution_to_native_increment_ratio
-        )
-        equivalent_periods = equivalent_span_s / execution_period
+    def history_report(self, history_clock=EXECUTION_CLOCK) -> dict:
+        if history_clock not in (EXECUTION_CLOCK, WALL_CLOCK):
+            raise ValueError("history_clock must be execution or wall")
+        if history_clock == EXECUTION_CLOCK:
+            frames = EXECUTION_HISTORY_FRAMES
+            seconds = frames / EXECUTION_FPS
+            policy = "16 completed execution periods; synchronous holds are skipped"
+        else:
+            frames = self.history_offset_frames
+            seconds = frames / self.fps
+            policy = "model-advertised wall-camera offset"
         return {
-            "capture_offset_frames": self.history_offset_frames,
-            "capture_offset_s": self.history_capture_offset_s,
-            "capture_policy": "read from info; unchanged by execution schedule",
-            "frame_per_step_equivalent_execution_periods": equivalent_periods,
-            "frame_per_step_equivalent_span_s": equivalent_span_s,
-            "equivalent_value_is_diagnostic_only": True,
+            "clock": history_clock,
+            "capture_offset_frames": frames,
+            "capture_offset_s": seconds,
+            "capture_policy": policy,
+            "model_advertised_history_offset_frames": self.history_offset_frames,
+            "model_advertised_history_offset_s": self.history_offset_frames / self.fps,
         }
 
 
@@ -150,30 +144,50 @@ class ExecutionSchedule:
 
 def build_schedule(model: ModelTiming, *, sample_ns: int,
                    exec_start_ns: Optional[int] = None,
+                   dispatch_ns: Optional[int] = None,
+                   reserve_s: float = 0.0,
                    mode: str = DEFAULT_MODE,
+                   latency_policy: str = DEFAULT_LATENCY_POLICY,
+                   history_clock: str = EXECUTION_CLOCK,
                    steps: int = DEFAULT_STEPS) -> ExecutionSchedule:
+    """Build a non-executing schedule and fail on ambiguous latency policy."""
     if type(sample_ns) is not int or sample_ns < 0:
         raise ValueError("sample_ns must be a nonnegative integer")
     if type(steps) is not int or not 1 <= steps <= 32:
         raise ValueError("steps must be an integer within [1, 32]")
+    if latency_policy not in (SYNC_HOLD, REALTIME_CUTOFF):
+        raise ValueError("unknown latency policy: " + str(latency_policy))
+    if history_clock not in (EXECUTION_CLOCK, WALL_CLOCK):
+        raise ValueError("history_clock must be execution or wall")
+    reserve_s = _finite_float(reserve_s, "reserve_s")
+    if reserve_s < 0:
+        raise ValueError("reserve_s must be nonnegative")
     indices = tuple(range(steps))
     model_times = model.keypoint_time_s[:steps]
 
     if mode == FRAME_PER_STEP_30HZ:
+        if latency_policy != SYNC_HOLD:
+            raise ValueError("frame_per_step_30hz only supports sync_hold")
+        if dispatch_ns is not None:
+            if type(dispatch_ns) is not int or dispatch_ns < sample_ns:
+                raise ValueError("dispatch_ns must be an integer >= sample_ns")
+            derived = int(dispatch_ns) + int(round(reserve_s * 1e9))
+            if exec_start_ns is not None and exec_start_ns != derived:
+                raise ValueError("exec_start_ns conflicts with dispatch_ns + reserve")
+            exec_start_ns = derived
         if exec_start_ns is None or type(exec_start_ns) is not int or exec_start_ns < sample_ns:
-            raise ValueError("frame_per_step_30hz requires exec_start_ns >= sample_ns")
-        # Round absolute offsets, rather than accumulating a truncated 33.333 ms
-        # period; the 32nd deadline is therefore exactly nearest to 32/30 s.
+            raise ValueError("sync_hold requires exec_start_ns or dispatch_ns >= sample_ns")
         offsets_ns = tuple(int(round((index + 1) * (1e9 / EXECUTION_FPS)))
                            for index in indices)
         deadlines = tuple(int(exec_start_ns) + offset for offset in offsets_ns)
         anchor = int(exec_start_ns)
-        timing_definition = "deadline[i] = exec_start_ns + round((i+1)/30 * 1e9)"
+        timing_definition = "deadline[i] = dispatch_ns + reserve + round((i+1)/30 * 1e9)"
     elif mode == NATIVE_TIME:
+        if latency_policy != REALTIME_CUTOFF:
+            raise ValueError("native_time is diagnostic and requires realtime_cutoff")
         if exec_start_ns is not None and exec_start_ns != sample_ns:
             raise ValueError("native_time is anchored at sample_ns; do not retime it")
-        offsets_ns = tuple(int(round(model_time * 1e9))
-                           for model_time in model_times)
+        offsets_ns = tuple(int(round(model_time * 1e9)) for model_time in model_times)
         deadlines = tuple(int(sample_ns) + offset for offset in offsets_ns)
         anchor = int(sample_ns)
         exec_start_ns = int(sample_ns)
@@ -182,13 +196,15 @@ def build_schedule(model: ModelTiming, *, sample_ns: int,
         raise ValueError("unknown timing mode: " + str(mode))
 
     report = {
-        "mode": mode,
-        "default_mode": DEFAULT_MODE,
-        "steps": steps,
-        "default_steps": DEFAULT_STEPS,
+        "mode": mode, "latency_policy": latency_policy,
+        "default_mode": DEFAULT_MODE, "default_latency_policy": DEFAULT_LATENCY_POLICY,
+        "steps": steps, "default_steps": DEFAULT_STEPS,
         "execution_fps": EXECUTION_FPS,
         "execution_period_s": 1.0 / EXECUTION_FPS,
         "timing_definition": timing_definition,
+        "sample_ns": int(sample_ns),
+        "dispatch_ns": None if dispatch_ns is None else int(dispatch_ns),
+        "reserve_s": reserve_s,
         "anchor_ns": anchor,
         "first_deadline_ns": int(deadlines[0]),
         "last_deadline_ns": int(deadlines[-1]),
@@ -196,10 +212,9 @@ def build_schedule(model: ModelTiming, *, sample_ns: int,
         "native_model_time_s": list(model_times),
         "native_time_is_diagnostic_only": True,
         "selected_mode_is_execution_default": mode == DEFAULT_MODE,
-        "history": model.history_report(),
+        "history": model.history_report(history_clock),
         "hardware_commands_sent": 0,
         "execution_ready": False,
     }
     return ExecutionSchedule(mode, int(sample_ns), int(exec_start_ns), indices,
                              deadlines, model_times, report)
-

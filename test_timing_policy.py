@@ -1,7 +1,8 @@
 import unittest
 
 from timing_policy import (DEFAULT_MODE, DEFAULT_STEPS, FRAME_PER_STEP_30HZ,
-                           NATIVE_TIME, ModelTiming, build_schedule)
+                           NATIVE_TIME, REALTIME_CUTOFF, SYNC_HOLD,
+                           ModelTiming, build_schedule)
 
 
 def humanhand_model():
@@ -31,24 +32,36 @@ class TimingPolicyTests(unittest.TestCase):
         self.assertFalse(schedule.report["execution_ready"])
         self.assertEqual(schedule.report["hardware_commands_sent"], 0)
 
-    def test_history_capture_contract_stays_at_four_camera_frames(self):
+    def test_execution_history_is_sixteen_frames(self):
         model = humanhand_model()
         report = model.history_report()
-        self.assertEqual(report["capture_offset_frames"], 4)
-        self.assertAlmostEqual(report["capture_offset_s"], 4 / 30.0)
-        self.assertAlmostEqual(report["frame_per_step_equivalent_execution_periods"], 16.0)
-        self.assertAlmostEqual(report["frame_per_step_equivalent_span_s"], 16 / 30.0)
-        self.assertTrue(report["equivalent_value_is_diagnostic_only"])
+        self.assertEqual(report["capture_offset_frames"], 16)
+        self.assertAlmostEqual(report["capture_offset_s"], 16 / 30.0)
+        self.assertEqual(report["model_advertised_history_offset_frames"], 4)
+        self.assertIn("holds are skipped", report["capture_policy"])
 
     def test_native_time_is_retained_only_as_explicit_comparison(self):
         model = humanhand_model()
-        schedule = build_schedule(model, sample_ns=5_000_000_000, mode=NATIVE_TIME)
+        schedule = build_schedule(model, sample_ns=5_000_000_000, mode=NATIVE_TIME,
+                                  latency_policy=REALTIME_CUTOFF)
         self.assertEqual(schedule.deadlines_ns[0], 5_008_333_333)
         self.assertEqual(schedule.deadlines_ns[-1], 5_266_666_667)
         self.assertAlmostEqual(schedule.duration_s, 8 / 30.0, places=9)
         self.assertEqual(schedule.report["mode"], NATIVE_TIME)
         self.assertTrue(schedule.report["native_time_is_diagnostic_only"])
         self.assertFalse(schedule.report["selected_mode_is_execution_default"])
+
+    def test_sync_hold_starts_at_dispatch_plus_reserve(self):
+        schedule = build_schedule(humanhand_model(), sample_ns=1_000_000_000,
+                                  dispatch_ns=2_000_000_000, reserve_s=0.15)
+        self.assertEqual(schedule.exec_start_ns, 2_150_000_000)
+        self.assertEqual(schedule.report["latency_policy"], SYNC_HOLD)
+        self.assertEqual(schedule.source_indices, tuple(range(32)))
+
+    def test_frame_per_step_rejects_realtime_cutoff(self):
+        with self.assertRaisesRegex(ValueError, "only supports sync_hold"):
+            build_schedule(humanhand_model(), sample_ns=100, exec_start_ns=200,
+                           latency_policy=REALTIME_CUTOFF)
 
     def test_future_selection_discards_only_expired_prefix(self):
         schedule = build_schedule(humanhand_model(), sample_ns=1_000_000_000,
@@ -68,7 +81,8 @@ class TimingPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "steps"):
             build_schedule(model, sample_ns=100, exec_start_ns=100, steps=0)
         with self.assertRaisesRegex(ValueError, "anchored"):
-            build_schedule(model, sample_ns=100, exec_start_ns=101, mode=NATIVE_TIME)
+            build_schedule(model, sample_ns=100, exec_start_ns=101, mode=NATIVE_TIME,
+                           latency_policy=REALTIME_CUTOFF)
 
 
 if __name__ == "__main__":

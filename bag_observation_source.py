@@ -131,7 +131,7 @@ def decode_rgb(message):
     return np.ascontiguousarray(bgr[:, :, ::-1])
 
 
-def extract_snapshot(bag, image_index, history_offset_frames=4,
+def extract_snapshot(bag, image_index, history_offset_frames=16,
                      state_tolerance_ns=10_000_000):
     image_topic = TOPICS["image"]
     count = bag.count(image_topic)
@@ -139,6 +139,14 @@ def extract_snapshot(bag, image_index, history_offset_frames=4,
         raise ValueError("image_index must leave enough history and remain in bag")
     image_db_ns, image = bag.at_index(image_topic, image_index)
     sample_ns = header_ns(image)
+    period_headers = []
+    for index in range(max(0, image_index - 60), image_index + 1):
+        _, period_image = bag.at_index(image_topic, index)
+        period_headers.append(header_ns(period_image))
+    median_period_ns = float(np.median(np.diff(period_headers)))
+    measured_fps = 1e9 / median_period_ns
+    history_tolerance_ns = int(np.clip(median_period_ns / 2.0,
+                                       16_700_000, 50_000_000))
     history_target_ns = sample_ns - int(round(history_offset_frames / 30.0 * 1e9))
     # SQLite receive timestamps and sensor header timestamps have a fixed
     # transport offset.  Select around the expected image index and compare
@@ -151,8 +159,8 @@ def extract_snapshot(bag, image_index, history_offset_frames=4,
         candidates.append(candidate)
     history = min(candidates, key=lambda value: abs(header_ns(value) - history_target_ns))
     history_ns = header_ns(history)
-    if abs(history_ns - history_target_ns) > 20_000_000:
-        raise RuntimeError("offline history frame is outside 20 ms tolerance")
+    if abs(history_ns - history_target_ns) > history_tolerance_ns:
+        raise RuntimeError("offline history frame is outside dynamic tolerance")
     arrays = {"head_rgb": decode_rgb(image), "history_rgb": decode_rgb(history)}
     report = {
         "schema": "xflow_offline_bag_snapshot_v1",
@@ -160,6 +168,9 @@ def extract_snapshot(bag, image_index, history_offset_frames=4,
         "image_format": image.format, "image_index": image_index,
         "sample_ns": sample_ns, "history_sample_ns": history_ns,
         "history_offset_frames": history_offset_frames,
+        "history_clock": "execution_equals_wall_for_offline_recording",
+        "measured_camera_fps": measured_fps,
+        "history_tolerance_ms": history_tolerance_ns / 1e6,
         "history_target_error_ms": abs(history_ns - history_target_ns) / 1e6,
         "alignment_error_ms": {}, "hardware_commands_sent": 0,
         "execution_ready": False,
@@ -233,17 +244,45 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bag", type=Path, required=True)
     parser.add_argument("--image-index", type=int, default=800)
-    parser.add_argument("--history-offset-frames", type=int, default=4)
+    parser.add_argument("--history-offset-frames", type=int, default=16)
+    parser.add_argument("--snapshot-fractions",
+                        help="comma-separated image fractions, e.g. 0.2,0.4,0.6,0.8")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     try:
         with ReadOnlyBag(args.bag) as bag:
-            arrays, report = extract_snapshot(
-                bag, args.image_index, args.history_offset_frames)
-        np.savez_compressed(args.output / "observation.npz", **arrays)
-        report["npz"] = str(args.output / "observation.npz")
-        (args.output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
+            if args.snapshot_fractions:
+                count = bag.count(TOPICS["image"])
+                reports = {}
+                for text in args.snapshot_fractions.split(","):
+                    fraction = float(text)
+                    if not 0.0 < fraction < 1.0:
+                        raise ValueError("snapshot fractions must be within (0,1)")
+                    index = int(round((count - 1) * fraction))
+                    label = "frac%03d" % int(round(fraction * 100))
+                    destination = args.output / label
+                    destination.mkdir(parents=True, exist_ok=False)
+                    arrays, item = extract_snapshot(
+                        bag, index, args.history_offset_frames)
+                    np.savez_compressed(destination / "observation.npz", **arrays)
+                    item["fraction"] = fraction
+                    item["npz"] = str(destination / "observation.npz")
+                    (destination / "report.json").write_text(
+                        json.dumps(item, indent=2) + "\n")
+                    reports[label] = item
+                report = {"schema": "xflow_offline_bag_multi_snapshot_r2",
+                          "snapshots": reports, "hardware_commands_sent": 0,
+                          "execution_ready": False}
+                (args.output / "summary.json").write_text(
+                    json.dumps(report, indent=2) + "\n")
+            else:
+                arrays, report = extract_snapshot(
+                    bag, args.image_index, args.history_offset_frames)
+                np.savez_compressed(args.output / "observation.npz", **arrays)
+                report["npz"] = str(args.output / "observation.npz")
+                (args.output / "report.json").write_text(
+                    json.dumps(report, indent=2) + "\n")
         print(json.dumps(report, indent=2))
         return 0
     except BaseException as error:
