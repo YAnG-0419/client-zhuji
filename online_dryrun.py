@@ -461,9 +461,11 @@ def run(args):
         speed_policy = getattr(args, "speed_policy", execution["speed_policy"])
         clamp_report = None
         if speed_policy == "clamp_report":
-            _, clamp_report = clamp_q_report(q20, measured_q, chunk.times_ns,
-                                             schedule.exec_start_ns,
-                                             execution["hand_joint_speed_limit_rad_s"])
+            _, hand_clamp = clamp_q_report(q20, measured_q, chunk.times_ns,
+                                           schedule.exec_start_ns,
+                                           execution["hand_joint_speed_limit_rad_s"])
+            clamp_report = {"hand_q20": hand_clamp,
+                            "diagnostic_only": True, "execution_ready": False}
         elif speed_policy not in SPEED_POLICIES:
             raise ValueError("unknown speed policy: " + str(speed_policy))
         mode_report = {
@@ -549,6 +551,12 @@ def run(args):
         ik_started = time.perf_counter()
         q16, ik_report = offline_ik(root, accepted, data["arm_joint_positions_rad"],
                                     schedule.exec_start_ns)
+        if speed_policy == "clamp_report" and len(q16):
+            _, arm_clamp = clamp_q_report(
+                q16[:, :14], np.asarray(data["arm_joint_positions_rad"], float)[:14],
+                accepted.times_ns[:len(q16)], schedule.exec_start_ns,
+                execution["arm_joint_speed_limit_rad_s"])
+            clamp_report["arm_q16"] = arm_clamp
         mode_report["offline_pinocchio_ik"] = ik_report
         mode_report["offline_pinocchio_ik_ms"] = (time.perf_counter() - ik_started) * 1000
         mode_report["all_offline_safety_checks_passed"] = bool(
