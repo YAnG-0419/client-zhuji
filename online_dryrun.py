@@ -326,7 +326,8 @@ def run(args):
                                   str(data["camera_distortion_model"]),
                                   data["camera_K"], data["camera_D"],
                                   str(data["camera_frame_id"]))
-        processor = ImagePreprocessor(camera, image_config, args.image_mode)
+        processor = ImagePreprocessor(camera, image_config, args.image_mode,
+                                      getattr(args, "virtual_preset", "cam0_newk"))
         head = processor.process(data["head_rgb"])
         history = (processor.process(data["history_rgb"])
                    if "history_rgb" in data else None)
@@ -351,6 +352,7 @@ def run(args):
             if getattr(args, "save_responses", None):
                 save_response_cache(args.save_responses, response_label, response, {
                     "source": str(args.source), "image_mode": args.image_mode,
+                    "virtual_preset": getattr(args, "virtual_preset", "cam0_newk"),
                     "history_clock": getattr(args, "history_clock", EXECUTION_CLOCK),
                     "history_offset_frames": 16,
                     "request_task": args.task,
@@ -636,6 +638,7 @@ def main():
     parser.add_argument("--server", choices=("fake-gt", "remote", "replay"), default="fake-gt")
     parser.add_argument("--root-mode", choices=("auto", "free_root", "kabsch_fixed_root", "both"), default="auto")
     parser.add_argument("--image-mode", choices=("virtual_cam0", "stretch_undistort"), default="virtual_cam0")
+    parser.add_argument("--virtual-preset", choices=("cam0_newk", "hh_435", "hh_335"), default="cam0_newk")
     parser.add_argument("--time-scale", choices=(FRAME_PER_STEP_30HZ, NATIVE_TIME),
                         default=FRAME_PER_STEP_30HZ,
                         help="default is 32 distinct 30Hz frames; no 0.25 speed-scale mode")
@@ -675,7 +678,7 @@ def main():
         all_completed = True
         for source, label in sources:
             args.source = source
-            args.response_label = label + "-" + args.image_mode
+            args.response_label = label + "-" + args.image_mode + ("" if args.virtual_preset == "cam0_newk" else "-" + args.virtual_preset)
             destination = output if len(sources) == 1 else output / label
             destination.mkdir(parents=True, exist_ok=(destination == output))
             result = run(args)

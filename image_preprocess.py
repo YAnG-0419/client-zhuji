@@ -126,16 +126,40 @@ def resize_area(rgb, target_width, target_height):
     return np.clip(np.rint(output), 0, 255).astype(np.uint8)
 
 
+VIRTUAL_PRESETS = ("cam0_newk", "hh_435", "hh_335")
+
+
+def virtual_target_K(config, preset="cam0_newk"):
+    """320x320 pinhole intrinsics of the camera the model was trained on.
+
+    ``cam0_newk`` is the stage-one server-preprocessing emulation.  ``hh_435``
+    and ``hh_335`` are the exact per-window intrinsics recorded in the hh_a12
+    training release (HumanHand_A and HumanHand_pose21).
+    """
+    if preset == "cam0_newk":
+        value = config["cam0"]["virtual_K_320"]
+    elif preset in VIRTUAL_PRESETS:
+        value = config["virtual_targets"][preset]["K_320"]
+    else:
+        raise ValueError("unknown virtual camera preset: " + str(preset))
+    K = np.asarray(value, dtype=float).reshape(3, 3)
+    if not np.isfinite(K).all() or K[0, 0] <= 0 or K[1, 1] <= 0 or K[2, 2] != 1:
+        raise ValueError("invalid virtual camera intrinsics for " + preset)
+    return K
+
+
 class ImagePreprocessor:
-    def __init__(self, live_camera_info, config, mode="virtual_cam0"):
+    def __init__(self, live_camera_info, config, mode="virtual_cam0",
+                 virtual_preset="cam0_newk"):
         if mode not in MODES:
             raise ValueError("unknown image preprocessing mode")
         self.camera = live_camera_info
         self.config = config
         self.mode = mode
+        self.virtual_preset = virtual_preset
         if (self.camera["width"], self.camera["height"]) != (640, 480):
             raise ValueError("zhuji source image must be 640x480")
-        virtual_K = np.asarray(config["cam0"]["virtual_K_320"], dtype=float).reshape(3, 3)
+        virtual_K = virtual_target_K(config, virtual_preset)
         self.virtual_map = undistort_map(self.camera, virtual_K, (320, 320))
         self.virtual_invalid = ((self.virtual_map[0] < 0)
                                 | (self.virtual_map[0] > self.camera["width"] - 1)
@@ -162,7 +186,7 @@ class ImagePreprocessor:
     def report(self):
         return {
             "mode": self.mode, "output_shape": [320, 320, 3],
-            "image_space": "rgb320",
+            "image_space": "rgb320", "virtual_preset": self.virtual_preset,
             "virtual_cam0_black_border_ratio": self.black_border_ratio,
             "pixel_center_convention": self.config["pixel_center_convention"],
         }
