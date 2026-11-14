@@ -65,9 +65,9 @@ class ObservationBuffer:
         self.camera_info = value
 
     @staticmethod
-    def _nearest(queue, target_ns):
+    def _nearest(queue, target_ns, label="required observation stream"):
         if not queue:
-            raise RuntimeError("required observation stream has no samples")
+            raise RuntimeError(label + " has no samples")
         return min(queue, key=lambda item: abs(item[0] - target_ns))
 
     def snapshot(self, history_offset_frames=4, state_tolerance_ns=10_000_000,
@@ -84,14 +84,14 @@ class ObservationBuffer:
         if now - current[1] > max_receive_age_ns:
             raise RuntimeError("latest image is stale by local monotonic receive time")
         target_history_ns = current[0] - int(round(history_offset_frames / self.camera_fps * 1e9))
-        history = self._nearest(self.images, target_history_ns)
+        history = self._nearest(self.images, target_history_ns, "image history")
         if history[0] == current[0] or abs(history[0] - target_history_ns) > history_tolerance_ns:
             raise RuntimeError("required history image is unavailable")
         aligned = {}
         alignment_error_ns = {}
         names = {}
         for stream in STATE_STREAMS:
-            item = self._nearest(self.states[stream], current[0])
+            item = self._nearest(self.states[stream], current[0], stream)
             delta = abs(item[0] - current[0])
             if delta > state_tolerance_ns:
                 raise RuntimeError(stream + " is not aligned to image")

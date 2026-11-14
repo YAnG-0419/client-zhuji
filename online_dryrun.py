@@ -111,6 +111,16 @@ def fake_prediction(data, mapping, steps):
     return np.asarray(output), np.asarray(roots)
 
 
+def recorded_future_roots(data, mapping, steps):
+    camera_T_base = np.linalg.inv(mapping.base_from_source_camera)
+    return np.asarray([
+        [camera_T_base
+         @ pose7_matrix(data["future_" + side + "_sdk_eef_xyzw"][index])
+         @ mapping.sdk_eef_from_hand[side]
+         for side in SIDES]
+        for index in range(steps)])
+
+
 def model_timing_fake():
     return ModelTiming.from_info({
         "contract": "humanhand", "fps": 30.0, "history_offset_frames": 4,
@@ -182,6 +192,7 @@ def run(args):
 
     if args.server == "fake-gt":
         predicted, expected_roots = fake_prediction(data, mapping, steps)
+        reference_name = "fake_gt"
         timing = model_timing_fake()
         rpc_report = {"server": "fake-gt", "infer_requests": 0}
         normalize = False
@@ -211,7 +222,8 @@ def run(args):
                           "inference_seconds": response["inference_seconds"],
                           "model": response["model"],
                           "deployment_id": response["deployment_id"]}
-        expected_roots = None
+        expected_roots = recorded_future_roots(data, mapping, steps)
+        reference_name = "recorded_future_reference"
         normalize = True
     stage["prediction_ms"] = (time.perf_counter() - began) * 1000 - stage["load_and_proprio_ms"]
 
@@ -272,6 +284,7 @@ def run(args):
             "quaternion_norm_error_max": float(np.max(np.abs(
                 np.linalg.norm(accepted.eef[:, :, 3:], axis=2) - 1))),
             "hand_speed_peak_rad_s": float(np.max(hand_speed)),
+            "hand_speed_within_1rad_s": bool(np.max(hand_speed) <= 1.0),
             "hand_within_installed_limits": bool(all(
                 np.all(q20[:, index] >= mapping.limits[side][:, 0] - 1e-8)
                 and np.all(q20[:, index] <= mapping.limits[side][:, 1] + 1e-8)
@@ -295,7 +308,7 @@ def run(args):
             source_relative = np.linalg.inv(expected_roots[:steps, 0]) @ expected_roots[:steps, 1]
             actual_relative = np.linalg.inv(roots[:, 0]) @ roots[:, 1]
             relative_t, relative_r = pose_error(actual_relative, source_relative)
-            mode_report["fake_gt"] = {
+            mode_report[reference_name] = {
                 "root_translation_m": stats(root_t), "root_rotation_rad": stats(root_r),
                 "sdk_eef_translation_m": stats(eef_t), "sdk_eef_rotation_rad": stats(eef_r),
                 "q20_abs_error_rad": stats(np.abs(q20 - expected_q)),
@@ -306,6 +319,12 @@ def run(args):
         q16, ik_report = offline_ik(root, accepted, data["arm_joint_positions_rad"])
         mode_report["offline_pinocchio_ik"] = ik_report
         mode_report["offline_pinocchio_ik_ms"] = (time.perf_counter() - ik_started) * 1000
+        mode_report["all_offline_safety_checks_passed"] = bool(
+            mode_report["eef_box_violations"] == 0
+            and mode_report["hand_within_installed_limits"]
+            and mode_report["hand_speed_within_1rad_s"]
+            and ik_report["all_reachable"]
+            and ik_report["arm_joint_speed_within_1rad_s"])
         reports[mode] = mode_report
         outputs[mode] = {"raw": chunk, "accepted": accepted, "roots": roots,
                          "q20": q20, "q16": q16}
