@@ -46,6 +46,12 @@ def main():
     args = parser.parse_args()
     commands = relay_commands(args.server_host, args.server_port, args.relay_port,
                               args.b300_alias, args.zhuji_alias)
+    # SIGTERM/SIGHUP must run the cleanup below, otherwise the ssh children are
+    # orphaned and keep holding port 28765 on the Mac and on zhuji.
+    def terminate(signum, frame):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, terminate)
+    signal.signal(signal.SIGHUP, terminate)
     processes = [subprocess.Popen(command) for command in commands]
     try:
         wait_local(args.relay_port, processes)
