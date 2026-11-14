@@ -200,6 +200,30 @@ def extract_snapshot(bag, image_index, history_offset_frames=4,
         arrays[side + "_record_fk_xyzw"] = pose7(fk)
         report[side + "_sdk_vs_record_fk"] = pose_difference(
             arrays[side + "_sdk_eef_xyzw"], arrays[side + "_record_fk_xyzw"])
+    # Ground-truth future samples for the offline fake model.  These timestamps
+    # follow the service's hh_a12 native target geometry; execution scheduling
+    # is tested separately and currently places the 32 returned points at 30Hz.
+    future_time_s = np.arange(1, 33, dtype=np.float64) / 120.0
+    arrays["future_model_time_s"] = future_time_s
+    for side in ("left", "right"):
+        eef = []
+        q20 = []
+        future_errors = []
+        for offset_s in future_time_s:
+            target_ns = sample_ns + int(round(offset_s * 1e9))
+            hint_ns = image_db_ns + int(round(offset_s * 1e9))
+            _, eef_message = bag.nearest_header(TOPICS[side + "_eef"],
+                                                target_ns, hint_ns)
+            _, q_message = bag.nearest_header(TOPICS[side + "_wuji"],
+                                              target_ns, hint_ns)
+            if tuple(q_message.name) != runtime_names(side):
+                raise ValueError(side + " future Wuji names differ")
+            eef.append(pose7(eef_message)); q20.append(q_message.position)
+            future_errors.append(max(abs(header_ns(eef_message) - target_ns),
+                                     abs(header_ns(q_message) - target_ns)) / 1e6)
+        arrays["future_" + side + "_sdk_eef_xyzw"] = np.asarray(eef, np.float64)
+        arrays["future_" + side + "_wuji_q20_rad"] = np.asarray(q20, np.float64)
+        report[side + "_future_alignment_max_ms"] = float(max(future_errors))
     arrays["sample_ns"] = np.asarray(sample_ns, np.int64)
     arrays["history_sample_ns"] = np.asarray(history_ns, np.int64)
     return arrays, report
