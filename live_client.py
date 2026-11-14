@@ -10,7 +10,8 @@ Without --execute this is a live shadow run: the robot transport is read-only,
 hands are never enabled and no ServoP/Wuji target is sent.  With --execute the
 arms are streamed through supervised ServoP and the hands through wuji_control,
 reusing the replay_hand guards (feedback speed, live clearance, joint range,
-hand tracking, controller-hold stop).
+hand tracking).  Every stop, including faults, only stops ServoP streaming so
+the controller holds in High-Level Dev mode; request_emgy_stop is never sent.
 """
 from __future__ import annotations
 
@@ -79,6 +80,75 @@ def slerp_xyzw(q0, q1, u):
         theta = math.acos(min(1.0, dot))
         out = (math.sin((1 - u) * theta) * q0 + math.sin(u * theta) * q1) / math.sin(theta)
     return out / np.linalg.norm(out)
+
+
+def no_emergency_stop_transport(base):
+    """Transport that never sends request_emgy_stop (operator decision 2026-11-14).
+
+    Every stop -- normal end, Ctrl-C, guard trip, lease expiry, close -- becomes
+    "stop streaming ServoP": the TRON2 controller latches the current pose after
+    its ServoP command timeout and stays in High-Level Dev mode.  The physical
+    e-stop on site remains the operator's backstop.
+    """
+    class NoEmergencyStopTransport(base):
+        suppressed_emergency_stops = 0
+
+        def emergency_stop(self):
+            # Reached from inherited close()/watchdog paths: only stop streaming.
+            self.armed = False
+            self.suppressed_emergency_stops += 1
+
+        def watch(self):
+            while not self.closed.wait(.01):
+                if self.armed and (self.fault or time.monotonic() - self.lease_at > .1):
+                    self.fault = self.fault or "ServoP command lease expired"
+                    self.armed = False
+                    self.suppressed_emergency_stops += 1
+
+        def send(self, title, data, guid=None):
+            if title == "request_emgy_stop":
+                raise RuntimeError("request_emgy_stop is disabled for the XFlow client")
+            return super().send(title, data, guid)
+    return NoEmergencyStopTransport
+
+
+def controller_hold(robot, result, reason, timeout_s=3.0):
+    """Stop streaming and verify the controller hold; never sends an emergency stop.
+
+    Reads the feedback cache directly so a transport fault (e.g. lease expiry)
+    does not prevent verification.  Never raises; the outcome is recorded.
+    """
+    robot.armed = False
+    report = dict(reason=str(reason), emergency_stop_sent=False, timeout_s=timeout_s,
+                  required_stable_s=0.2, completed=False)
+    result["controller_hold"] = report
+    began, stable_since = time.monotonic(), None
+    while True:
+        now = time.monotonic()
+        state, info = getattr(robot, "qstate", None), getattr(robot, "info", None) or {}
+        mode = info.get("data", {}).get("working_mode")
+        report["working_mode"] = mode
+        if state is not None and now - getattr(robot, "q_at", 0.0) <= 0.15:
+            speed = float(np.max(np.abs(np.asarray(state["dq"], float)[:14])))
+            report["last_max_arm_speed_rad_s"] = speed
+            report["max_arm_speed_rad_s"] = max(report.get("max_arm_speed_rad_s", 0.0), speed)
+            stable_since = (now if stable_since is None else stable_since) if speed < 0.02 else None
+        else:
+            report["feedback_stale"] = True
+        if now - began >= 0.25 and stable_since is not None and now - stable_since >= 0.2:
+            report.update(completed=True, elapsed_s=now - began,
+                          developer_mode=(mode == "developer_mode"),
+                          held_q16=list(map(float, state["q"])))
+            result["arm_stop"] = "controller_hold"
+            print("ARMS HOLDING (working_mode=%s)" % mode, flush=True)
+            return report
+        if now - began > timeout_s:
+            report["elapsed_s"] = now - began
+            result["arm_stop"] = "controller_hold_unverified"
+            print("WARNING: controller hold not verified within %.1f s (mode=%s); "
+                  "no emergency stop was sent - watch the robot" % (timeout_s, mode), flush=True)
+            return report
+        time.sleep(0.01)
 
 
 class ChunkSampler:
@@ -242,7 +312,6 @@ def run(args, out, result):
     from robot_home import Hands, process_commands
     from home_policy import require_status
     from hand_only import HandSession, observed_hands_type, limits_from_install, stop_hand_stack
-    from full_sync import latch_servop_hold
     from arm_only import ArmSession
     from movej_prepare import check_servop_box
     from wire_trace import attach_trace, save_trace
@@ -264,7 +333,7 @@ def run(args, out, result):
 
         _, Model, Transport = replay_backend()
         model = Model()
-        robot = servo_transport(Transport)(model.lower[:14], model.upper[:14])
+        robot = no_emergency_stop_transport(servo_transport(Transport))(model.lower[:14], model.upper[:14])
         attach_trace(robot)
         state = robot.snapshot()
         save(out / "start_state.json", state)
@@ -469,13 +538,13 @@ def run(args, out, result):
         result["cycles_executed"] = cycle
         print("STOPPING: " + stop_reason, flush=True)
         if args.execute and robot.commands_sent:
-            latch_servop_hold(robot, result, stop_reason)
+            controller_hold(robot, result, stop_reason)
         result["completed"] = True
     except KeyboardInterrupt:
         result["stop_reason"] = "Ctrl-C"
         print("Ctrl-C: holding the arms", flush=True)
         if args.execute and robot is not None and robot.commands_sent and robot.armed:
-            latch_servop_hold(robot, result, "operator Ctrl-C")
+            controller_hold(robot, result, "operator Ctrl-C")
         result["completed"] = True
     finally:
         errors = []
@@ -489,11 +558,11 @@ def run(args, out, result):
             planner.join(timeout=3)
             if planner.is_alive():
                 planner.terminate()
-        if robot and (robot.armed or robot.commands_sent) and result.get("arm_stop") not in ("sent", "controller_hold"):
-            try:
-                robot.emergency_stop(); result["arm_stop"] = "sent"
-            except Exception as exc:
-                errors.append("arm stop: " + str(exc))
+        if robot and robot.commands_sent and "controller_hold" not in result:
+            # Fault path: stop streaming and let the controller hold; no request_emgy_stop.
+            failure = sys.exc_info()[1]
+            controller_hold(robot, result, ("fault: %s: %s" % (type(failure).__name__, failure))
+                            if failure else "cleanup")
         if hands:
             if hands.touched:
                 try:
@@ -519,6 +588,7 @@ def run(args, out, result):
             stack_log.close()
         if robot:
             result["arm_motion_commands_sent"] = robot.commands_sent
+            result["emergency_stops_suppressed"] = robot.suppressed_emergency_stops
             try:
                 robot.close()
             except Exception as exc:

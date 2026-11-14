@@ -18,7 +18,9 @@ START = np.array([[0.40, 0.25, 0.02, *Rotation.from_euler("x", 0.1).as_quat()],
 
 class FakeRobot:
     def __init__(self, *args, **kwargs):
-        self.info = {"accid": "DACH_TRON2A_447", "data": {}}
+        self.info = {"accid": "DACH_TRON2A_447", "data": {"working_mode": "developer_mode"}}
+        self.track = getattr(FakeRobot, "default_track", True)
+        self.qstate = {"q": [0.0] * 16, "dq": [0.0] * 16}
         self.armed = False; self.commands_sent = 0; self.lease_at = 0.0
         self.backend = None; self.sent = []
         self.eef = START.copy()
@@ -37,21 +39,26 @@ class FakeRobot:
         pass
 
     def healthy(self):
-        self.pose = self._pose()
+        self.pose = self._pose(); self.q_at = time.monotonic()
         return np.zeros(16), np.zeros(16)
 
     def arm_servop(self):
         self.armed = True; self.backend = "supervised_servop"
 
-    def send(self, title, data):
-        assert title == "request_servop" and self.armed
+    def send(self, title, data, guid=None):
+        assert title in ("request_servop", "request_emgy_stop")
+        assert title != "request_servop" or self.armed
+        if title == "request_emgy_stop":
+            raise AssertionError("request_emgy_stop must never be sent")
+        if not self.track:
+            return
         for i, key in enumerate(("left_pos", "right_pos")):
             v = np.asarray(data[key])
             self.eef[i] = np.r_[v[:3], v[4:], v[3]]   # perfect tracking, wxyz -> xyzw
         self.sent.append(self.eef.copy())
 
     def emergency_stop(self):
-        self.armed = False; self.stopped = True
+        self.send("request_emgy_stop", {})
 
     def close(self):
         pass
@@ -119,10 +126,10 @@ class FakeCamera:
 
 
 class FakeConnection:
-    """Planner stand-in: 32 steps moving the left hand 2 cm along +x."""
+    """Planner stand-in: 32 steps moving the left hand along +x."""
 
-    def __init__(self):
-        self.request = None
+    def __init__(self, distance=0.02):
+        self.request = None; self.distance = distance
 
     def send(self, message):
         if message is not None:
@@ -134,7 +141,7 @@ class FakeConnection:
     def recv(self):
         request, self.request = self.request, None
         eef = np.repeat(np.asarray(request["eef_command"])[None], 32, axis=0)
-        eef[:, 0, 0] += np.linspace(0.0, 0.02, 32)
+        eef[:, 0, 0] += np.linspace(0.0, self.distance, 32)
         return {"ok": True, "plan": {
             "times_s": (np.arange(32) + 1) / 30.0, "eef": eef,
             "q20": np.repeat(np.asarray(request["q20_command"])[None], 32, axis=0),
@@ -159,8 +166,6 @@ def install_fakes(state):
         "hand_only": dict(HandSession=FakeHandSession, observed_hands_type=lambda H: H,
                           limits_from_install=lambda: (np.tile([-1.0, 2.0], (2, 20, 1)), {}),
                           stop_hand_stack=lambda stack: None),
-        "full_sync": dict(latch_servop_hold=lambda robot, result, reason: state.update(latched=reason)
-                          or result.update(arm_stop="controller_hold")),
         "arm_only": dict(ArmSession=FakeArmSession),
         "movej_prepare": dict(check_servop_box=lambda poses: None),
         "wire_trace": dict(attach_trace=lambda robot: None, save_trace=lambda robot, out, result: None),
@@ -175,47 +180,69 @@ def install_fakes(state):
     return saved
 
 
-class LiveClientFakeHardwareTest(unittest.TestCase):
-    def test_execute_two_cycles_is_continuous_and_latches(self):
-        state = {}
-        quat_module = types.ModuleType("replay_quat")
+def run_fake(robot_track=True, distance=0.02, cycles=2):
+    quat_module = types.ModuleType("replay_quat")
 
-        class QuatTrack:
-            def __call__(self, poses):
-                return [np.r_[p[:3], p[6], p[3:6]] for p in poses]
-        quat_module.QuatTrack = QuatTrack
-        sys.modules["replay_quat"] = quat_module
-        saved = install_fakes(state)
-        originals = (live_client.start_planner, live_client.CameraFeed,
-                     live_client.validate_camera_info, live_client.camera_info_from_json)
-        connection = FakeConnection()
-        live_client.start_planner = lambda args: (types.SimpleNamespace(join=lambda timeout: None,
-                                                                         is_alive=lambda: False),
-                                                  connection, {"fake": True})
-        live_client.CameraFeed = FakeCamera
-        live_client.validate_camera_info = lambda a, b: {}
-        live_client.camera_info_from_json = lambda path: {}
-        try:
-            with tempfile.TemporaryDirectory() as folder:
-                args = types.SimpleNamespace(task="flower", model="hh_a12", execute=True, step=False,
-                                             cycles=2, steps=32, image_mode="virtual_cam0",
-                                             virtual_preset="cam0_newk", denoise_steps=10, arm_cap=0.8,
-                                             hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
-                                             settle=0.05, rate=300.0, max_failures=3, relay_port=28765)
-                result = {"hand_target_updates": 0}
+    class QuatTrack:
+        def __call__(self, poses):
+            return [np.r_[p[:3], p[6], p[3:6]] for p in poses]
+    quat_module.QuatTrack = QuatTrack
+    sys.modules["replay_quat"] = quat_module
+    state = {}
+    saved = install_fakes(state)
+    FakeRobot.default_track = robot_track
+    originals = (live_client.start_planner, live_client.CameraFeed,
+                 live_client.validate_camera_info, live_client.camera_info_from_json)
+    connection = FakeConnection(distance)
+    live_client.start_planner = lambda args: (types.SimpleNamespace(join=lambda timeout: None,
+                                                                     is_alive=lambda: False),
+                                              connection, {"fake": True})
+    live_client.CameraFeed = FakeCamera
+    live_client.validate_camera_info = lambda a, b: {}
+    live_client.camera_info_from_json = lambda path: {}
+    result = {"hand_target_updates": 0}
+    error = None
+    try:
+        with tempfile.TemporaryDirectory() as folder:
+            args = types.SimpleNamespace(task="flower", model="hh_a12", execute=True, step=False,
+                                         cycles=cycles, steps=32, image_mode="virtual_cam0",
+                                         virtual_preset="cam0_newk", denoise_steps=10, arm_cap=0.8,
+                                         hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
+                                         settle=0.05, rate=300.0, max_failures=3, relay_port=28765)
+            try:
                 live_client.run(args, Path(folder), result)
-        finally:
-            (live_client.start_planner, live_client.CameraFeed,
-             live_client.validate_camera_info, live_client.camera_info_from_json) = originals
-            for name, module in saved.items():
-                if module is None:
-                    sys.modules.pop(name, None)
-                else:
-                    sys.modules[name] = module
+            except Exception as exc:
+                error = exc
+    finally:
+        (live_client.start_planner, live_client.CameraFeed,
+         live_client.validate_camera_info, live_client.camera_info_from_json) = originals
+        for name, module in saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+    return result, error
+
+
+class LiveClientFakeHardwareTest(unittest.TestCase):
+    def test_execute_two_cycles_ends_in_controller_hold(self):
+        result, error = run_fake()
+        self.assertIsNone(error)
         self.assertTrue(result["completed"], result)
         self.assertEqual(result["cycles_executed"], 2)
-        self.assertEqual(state.get("latched"), "requested cycles completed")
+        self.assertEqual(result["arm_stop"], "controller_hold")
+        self.assertFalse(result["controller_hold"]["emergency_stop_sent"])
+        self.assertTrue(result["controller_hold"]["developer_mode"])
         self.assertGreater(result["arm_motion_commands_sent"], 500)
+
+    def test_guard_fault_holds_without_emergency_stop(self):
+        # The robot ignores commands, so the EEF tracking guard must trip.
+        result, error = run_fake(robot_track=False, distance=0.10, cycles=1)
+        self.assertIsInstance(error, RuntimeError)
+        self.assertIn("tracking", str(error))
+        self.assertEqual(result["arm_stop"], "controller_hold")
+        self.assertFalse(result["controller_hold"]["emergency_stop_sent"])
+        self.assertEqual(result["emergency_stops_suppressed"], 0)
 
 
 if __name__ == "__main__":
