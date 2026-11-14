@@ -28,8 +28,11 @@ from convert import normalized_goals  # noqa: E402
 # is insufficient to estimate a 6-DoF pose.  The fixed-root mode therefore
 # aligns the current-q FK positions (and refines q/root alternately), rather
 # than incorrectly treating neutral-FK positions as rigid landmarks.
-PALM_ALIGNMENT_POINTS = np.array([1, 5, 9, 13, 17], dtype=int)
-RIGID_POINTS = PALM_ALIGNMENT_POINTS  # Backward-compatible public name.
+PALM_ALIGNMENT_POINTS = np.array([0, 1, 5, 9, 13, 17], dtype=int)
+# The original free-root initializer uses the five finger-base points.  Keep
+# that behavior separate from the q-conditioned fixed-root alignment above.
+FREE_ROOT_INITIAL_POINTS = np.array([1, 5, 9, 13, 17], dtype=int)
+RIGID_POINTS = FREE_ROOT_INITIAL_POINTS  # Backward-compatible public name.
 MODES = ("free_root", "kabsch_fixed_root")
 
 
@@ -113,8 +116,8 @@ class Wuji2StreamingRetargeter:
     def _free_root(self, goal, temporal):
         if self.root is None:
             rotation, translation = rigid_align(
-                self.hand.fk(self.q)[PALM_ALIGNMENT_POINTS],
-                goal[PALM_ALIGNMENT_POINTS])
+                self.hand.fk(self.q)[FREE_ROOT_INITIAL_POINTS],
+                goal[FREE_ROOT_INITIAL_POINTS])
             root = _pose(rotation, translation)
         else:
             root = self.root
@@ -225,6 +228,8 @@ class Wuji2StreamingRetargeter:
                 tip_rmse_m=float(np.sqrt(np.mean(error[TIPS] ** 2))),
                 all_rmse_m=float(np.sqrt(np.mean(error ** 2))),
                 root_keypoint_error_m=float(error[0]),
+                root_to_keypoint0_distance_m=float(
+                    np.linalg.norm(predicted[0] - root[:3, 3])),
                 joint_step_rad=joint_step,
                 root_translation_step_m=root_translation_step,
                 root_rotation_step_rad=root_rotation_step,

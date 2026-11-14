@@ -24,7 +24,8 @@ class HandRetargetTests(unittest.TestCase):
         _, jacobian = solver.hand.fk(solver.hand.neutral, True)
         moving = np.max(np.abs(jacobian), axis=(1, 2)) > 1e-10
         self.assertEqual(np.flatnonzero(~moving).tolist(), [0])
-        self.assertTrue(moving[PALM_ALIGNMENT_POINTS].all())
+        self.assertFalse(moving[PALM_ALIGNMENT_POINTS[0]])
+        self.assertTrue(moving[PALM_ALIGNMENT_POINTS[1:]].all())
 
     def exact_case(self, side, mode):
         solver = Wuji2StreamingRetargeter(side, mode, thresholds={
@@ -45,6 +46,9 @@ class HandRetargetTests(unittest.TestCase):
         self.assertLess(translation, 1e-4)
         self.assertLess(angle, np.deg2rad(0.05))
         self.assertLess(result["diagnostic"]["all_rmse_m"], 1e-4)
+        nominal = np.linalg.norm(solver.hand.fk(q)[0])
+        self.assertAlmostEqual(result["diagnostic"]["root_to_keypoint0_distance_m"],
+                               nominal, places=9)
 
     def test_exact_wuji_fk_recovers_random_root_and_joints(self):
         for side in ("left", "right"):
