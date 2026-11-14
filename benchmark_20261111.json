@@ -1,0 +1,86 @@
+{
+  "schema": "offline_replay_benchmark_v1",
+  "run": "/home/guest/pengyang/replay_hand/runs/replay_full_20261111_120729_44426",
+  "timestamp_local": "2026-11-11 14:32:30 +0800",
+  "network_connections_allowed": false,
+  "hardware_commands_sent": 0,
+  "source_frames": 1438,
+  "load_average": [
+    1.91,
+    2.1,
+    2.23
+  ],
+  "note": "Current-load microbenchmark; excludes ROS, live feedback, disk logs, WebSocket transport and real-time scheduling. Direct EEF interpolation changes the target path and is not an execution-equivalence claim.",
+  "timings": {
+    "joint_interpolation_fk_workspace_quaternion_json": {
+      "samples": 200,
+      "mean_ms": 0.19240406508288288,
+      "p50_ms": 0.18106549941876438,
+      "p95_ms": 0.2415174494672099,
+      "p99_ms": 0.2982697899824413,
+      "max_ms": 0.39368199941236526
+    },
+    "eef_linear_slerp_workspace_quaternion_json": {
+      "samples": 200,
+      "mean_ms": 0.10936154501905548,
+      "p50_ms": 0.10627000028762268,
+      "p95_ms": 0.1361288492262247,
+      "p99_ms": 0.16021145063859876,
+      "max_ms": 0.17282000044360757
+    },
+    "arm_model_update_and_clearance": {
+      "samples": 50,
+      "mean_ms": 2.827856839976448,
+      "p50_ms": 2.787075000924233,
+      "p95_ms": 3.1230340501679166,
+      "p99_ms": 3.1629309203162848,
+      "max_ms": 3.1848300004639896
+    },
+    "hand_model_update_and_clearance": {
+      "samples": 50,
+      "mean_ms": 1.0494471999481902,
+      "p50_ms": 1.0304290008207317,
+      "p95_ms": 1.3367340993681858,
+      "p99_ms": 1.481985989757959,
+      "max_ms": 1.503863999460009
+    }
+  },
+  "ik_cases": [
+    {
+      "frame": 1,
+      "source_time_s": 0.02,
+      "seed": "previous saved planned joints",
+      "elapsed_ms": 0.7975070002430584,
+      "position_error_m": 8.582249459327903e-06,
+      "rotation_error_rad": 0.00018054696957029348,
+      "passes_residual_gate": true
+    },
+    {
+      "frame": 719,
+      "source_time_s": 14.38,
+      "seed": "previous saved planned joints",
+      "elapsed_ms": 1061.7083790002653,
+      "position_error_m": 0.0015000249919535102,
+      "rotation_error_rad": 0.006489807110577182,
+      "passes_residual_gate": true
+    },
+    {
+      "frame": 1437,
+      "source_time_s": 28.733333334,
+      "seed": "previous saved planned joints",
+      "elapsed_ms": 871.0223350008164,
+      "position_error_m": 0.0014621956323227793,
+      "rotation_error_rad": 0.006326386608257033,
+      "passes_residual_gate": true
+    }
+  ],
+  "arm_model_initialization_ms": 533.1299999998009,
+  "hand_model_initialization_ms": 423.1408460000239,
+  "source_sha256": {
+    "replay_hand/full_sync.py": "736c4e47567265c514bf1a758213ede060df77fbad64e7ac2bf3817c0bd78369",
+    "replay_hand/accuracy_replay.py": "d078fc7506d170d9420e256207a4a679817529ba6c6d1c322ddae8d4090be6b1",
+    "replay_hand/planner_cross.py": "9171498a595b47a80b3b0094e2344905da8ef7fdf5d74684a5b37e64b6640285",
+    "replay/replay.py": "389ff99acd85cb89134fd3247f0a97f788fc25c20295d1b37b9388f2c48f77a9",
+    "replay/replay_thresholds.py": "d2667a4339344e2d11ca4f768f64205a62986613513d20fe0e6dc2d50f9bb4c1"
+  }
+}
