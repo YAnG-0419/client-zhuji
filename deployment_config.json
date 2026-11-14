@@ -23,6 +23,11 @@
     "additional_adapter_length_m": 0.0,
     "reason": "the physical adapter is already represented by the calibrated installation chain; coordinate origins are not physical endpoints"
   },
+  "camera_mapping": {
+    "default": "live_zhuji_camera",
+    "live_zhuji_camera": "M=I; keypoints and images already use the current zhuji top_color_optical_frame",
+    "board_transfer": "M=T_zhuji_camera_board @ inverse(T_source_camera_board); only for old Orbbec/replay inputs"
+  },
   "timing": {
     "planning_period_s": 0.02,
     "arm_send_period_s": 0.0033333333333333335,

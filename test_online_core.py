@@ -56,6 +56,24 @@ class OnlineCoreTests(unittest.TestCase):
         self.assertEqual(chunk.metadata["hardware_commands_sent"], 0)
         self.assertFalse(chunk.metadata["execution_ready"])
 
+    def test_live_camera_mapping_is_identity_and_replay_mode_is_explicit(self):
+        root = Path(__file__).resolve().parents[1]
+        config = Path(__file__).with_name("deployment_config.json")
+        camera_path = root / "replay_robot/camera_trajectory_adc619f1_20261114/inputs/zhuji_camera_41p5.json"
+        if not camera_path.exists():
+            self.skipTest("integration calibration files are only present on zhuji")
+        live = DeploymentMapping.load(root, config, "live_zhuji_camera")
+        replay = DeploymentMapping.load(root, config, "board_transfer")
+        camera = json.loads(camera_path.read_text())
+        np.testing.assert_allclose(live.base_from_source_camera,
+                                   camera["T_base_camera"], atol=1e-12)
+        np.testing.assert_allclose(live.report["target_camera_T_source_camera"],
+                                   np.eye(4), atol=1e-12)
+        self.assertEqual(live.report["camera_mapping_mode"], "live_zhuji_camera")
+        self.assertEqual(replay.report["camera_mapping_mode"], "board_transfer")
+        self.assertGreater(np.max(np.abs(live.base_from_source_camera
+                                         - replay.base_from_source_camera)), 1e-3)
+
     def test_handoff_uses_old_start_new_end_and_shortest_rotation(self):
         times = np.arange(0, 601, 100, dtype=np.int64) * 1_000_000
         old_eef = np.zeros((len(times), 2, 7)); new_eef = old_eef.copy()

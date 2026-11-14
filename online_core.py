@@ -67,26 +67,37 @@ class DeploymentMapping:
     report: dict
 
     @classmethod
-    def load(cls, root: Path, config_path: Path) -> "DeploymentMapping":
+    def load(cls, root: Path, config_path: Path,
+             camera_mapping: Optional[str] = None) -> "DeploymentMapping":
         root = Path(root).resolve()
         config_path = Path(config_path).resolve()
         config = _json(config_path)
         if config.get("schema") != "pengyang_online_eef_client_v1":
             raise ValueError("unsupported deployment config schema")
         paths = {key: (root / value).resolve() for key, value in config["paths"].items()}
+        mapping_config = config["camera_mapping"]
+        mode = camera_mapping or mapping_config["default"]
+        if mode not in ("live_zhuji_camera", "board_transfer"):
+            raise ValueError("camera_mapping must be live_zhuji_camera or board_transfer")
         source = _json(paths["source_observation"])
         target = _json(paths["target_observation"])
         camera = _json(paths["target_camera_calibration"])
         for key in ("board_fingerprint", "board_config", "board_axes", "convention"):
             if source[key] != target[key]:
                 raise ValueError("source/target observation mismatch: " + key)
-        source_camera_from_board = rigid(source["camera_T_board"], "source camera_T_board")
-        target_camera_from_board = rigid(target["camera_T_board"], "target camera_T_board")
         base_from_target_camera = rigid(camera["T_base_camera"], "T_base_camera")
-        target_camera_from_source_camera = rigid(
-            target_camera_from_board @ np.linalg.inv(source_camera_from_board),
-            "target_camera_T_source_camera",
-        )
+        if mode == "live_zhuji_camera":
+            # The online keypoints already live in the zhuji optical frame.
+            # Applying the calibration-board source transfer here would be a
+            # second, incorrect camera transform.
+            target_camera_from_source_camera = np.eye(4)
+        else:
+            source_camera_from_board = rigid(source["camera_T_board"], "source camera_T_board")
+            target_camera_from_board = rigid(target["camera_T_board"], "target camera_T_board")
+            target_camera_from_source_camera = rigid(
+                target_camera_from_board @ np.linalg.inv(source_camera_from_board),
+                "target_camera_T_source_camera",
+            )
         base_from_source_camera = rigid(
             base_from_target_camera @ target_camera_from_source_camera,
             "base_T_source_camera",
@@ -126,6 +137,7 @@ class DeploymentMapping:
         provenance = {str(config_path): _sha256(config_path)}
         provenance.update({str(path): _sha256(path) for path in paths.values()})
         report = {
+            "camera_mapping_mode": mode,
             "source_camera_id": source["camera_id"],
             "target_camera_id": target["camera_id"],
             "board_fingerprint": source["board_fingerprint"],

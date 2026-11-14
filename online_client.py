@@ -27,6 +27,9 @@ def main() -> int:
     parser.add_argument("--config", type=Path,
                         default=Path(__file__).resolve().with_name("deployment_config.json"))
     parser.add_argument("--chunk", type=Path, required=True)
+    parser.add_argument("--camera-mapping", required=True,
+                        choices=("live_zhuji_camera", "board_transfer"),
+                        help="Use live_zhuji_camera for online zhuji observations; old replay/Orbbec chunks require board_transfer")
     parser.add_argument("--origin-ns", type=int,
                         help="Replace the recorded clock with an absolute monotonic planning origin")
     parser.add_argument("--output", type=Path)
@@ -43,7 +46,7 @@ def main() -> int:
               "execution_ready": False, "hardware_commands_sent": 0,
               "input": str(args.chunk.resolve()), "config": str(args.config.resolve())}
     try:
-        mapping = DeploymentMapping.load(root, args.config)
+        mapping = DeploymentMapping.load(root, args.config, args.camera_mapping)
         chunk = convert_camera_npz(args.chunk, mapping, origin_ns=args.origin_ns)
         period_ns = int(round(float(config["timing"]["planning_period_s"]) * 1e9))
         accepted = resample_chunk(chunk, period_ns)
