@@ -46,5 +46,11 @@
       "WUJI_VENDORED_LICENSE": "38b27e3155e0c1c8d6f3e909e7a00359a302085dfd9ae963b52a91cbbe25afa3"
     },
     "license": "MIT; retained verbatim in the vendored directory"
+  },
+  "xflow_wire_v4": {
+    "source": "/mnt/workspace/users/wanchi/workspace/code/XFlow/experiments/ego_pretrain_keypoints21/revisions/r5-posttrain-a12-20261114/training/scripts/deploy/wire_v4.py",
+    "copied_without_modification": "vendor/xflow_deploy/wire_v4.py",
+    "sha256": "6850b72c2e13ba396a201d8c0bd166120130bed91015895038619e93401c5c80",
+    "protocol": "xflow_kp21_chunk_v1 / TCP wire_v4"
   }
 }

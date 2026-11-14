@@ -28,6 +28,17 @@
     "live_zhuji_camera": "M=I; keypoints and images already use the current zhuji top_color_optical_frame",
     "board_transfer": "M=T_zhuji_camera_board @ inverse(T_source_camera_board); only for old Orbbec/replay inputs"
   },
+  "xflow": {
+    "protocol": "xflow_kp21_chunk_v1",
+    "protocol_version": 4,
+    "relay_host": "127.0.0.1",
+    "relay_port": 28765,
+    "model": "hh_a12",
+    "deployment_id": "34ca15a63ef03aa8",
+    "image_space": "rgb320",
+    "validation_infer_budget": 10,
+    "admin_commands_exposed": false
+  },
   "timing": {
     "planning_period_s": 0.02,
     "arm_send_period_s": 0.0033333333333333335,
