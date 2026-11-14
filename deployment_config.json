@@ -77,6 +77,10 @@
   "hand_retarget": {
     "root_mode": "free_root",
     "max_nfev": 300,
+    "weights": {"other": 0.05, "wrist": 0.1, "tips": 1.0},
+    "temporal_first": 0.0001,
+    "temporal_stream": 0.005,
+    "fixed_outer_iterations": 4,
     "palm_alignment_point_indices": [0, 1, 5, 9, 13, 17],
     "palm_alignment_note": "URDF FK/Jacobian proves only point 0 is root-fixed; five finger-base points move with MCP flex, so kabsch_fixed_root aligns current-q FK (wrist plus five bases) and alternates Kabsch with a fixed-root q solve",
     "thresholds": {

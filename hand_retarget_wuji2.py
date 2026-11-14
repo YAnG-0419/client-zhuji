@@ -65,7 +65,9 @@ def _pose_delta(a, b):
 class Wuji2StreamingRetargeter:
     """Stateful per-hand solver. No ROS, sockets, or robot transports."""
 
-    def __init__(self, side, mode="free_root", thresholds=None, max_nfev=300):
+    def __init__(self, side, mode="free_root", thresholds=None, max_nfev=300,
+                 weights=None, temporal_first=1e-4, temporal_stream=0.005,
+                 fixed_outer_iterations=4):
         if side not in ("left", "right"):
             raise ValueError("side must be left or right")
         if mode not in MODES:
@@ -74,13 +76,26 @@ class Wuji2StreamingRetargeter:
         self.mode = mode
         self.hand = Hand("wuji", side)
         self.neutral_points = self.hand.fk(self.hand.neutral)
-        self.weights = np.full(21, 0.05, dtype=float)
-        self.weights[0] = 0.1
-        self.weights[TIPS] = 1.0
+        weight_config = dict(other=0.05, wrist=0.1, tips=1.0)
+        weight_config.update(weights or {})
+        if set(weight_config) != {"other", "wrist", "tips"}:
+            raise ValueError("weights must contain only other/wrist/tips")
+        self.weights = np.full(21, float(weight_config["other"]), dtype=float)
+        self.weights[0] = float(weight_config["wrist"])
+        self.weights[TIPS] = float(weight_config["tips"])
+        if not np.isfinite(self.weights).all() or np.any(self.weights <= 0):
+            raise ValueError("point weights must be positive finite values")
         self.sqrt_weights = np.sqrt(self.weights)[:, None]
         self.max_nfev = int(max_nfev)
-        if not 10 <= self.max_nfev <= 2000:
-            raise ValueError("max_nfev must be within [10, 2000]")
+        if not 40 <= self.max_nfev <= 2000:
+            raise ValueError("max_nfev must be within [40, 2000]")
+        self.temporal_first = float(temporal_first)
+        self.temporal_stream = float(temporal_stream)
+        self.fixed_outer_iterations = int(fixed_outer_iterations)
+        if (not np.isfinite([self.temporal_first, self.temporal_stream]).all()
+                or self.temporal_first <= 0 or self.temporal_stream <= 0
+                or not 1 <= self.fixed_outer_iterations <= 8):
+            raise ValueError("invalid temporal regularization/outer iterations")
         defaults = dict(max_tip_rmse_m=0.020, max_all_rmse_m=0.015,
                         max_root_keypoint_error_m=0.015, max_joint_step_rad=0.35,
                         max_root_translation_step_m=0.08,
@@ -92,9 +107,20 @@ class Wuji2StreamingRetargeter:
         self.q = None
         self.root = None
         self.last_timestamp_ns = None
+        self.last_seen_timestamp_ns = None
 
     @property
     def joint_names(self):
+        """Runtime `/wuji` JointState order (finger-major)."""
+        return tuple("%s_finger%d_joint%d" % (self.side, finger, joint)
+                     for finger in range(1, 6) for joint in range(1, 5))
+
+    @property
+    def runtime_joint_names(self):
+        return self.joint_names
+
+    @property
+    def model_joint_names(self):
         return tuple(self.hand.names)
 
     def begin_chunk(self, seed_q20, seed_cam_T_root=None):
@@ -106,6 +132,7 @@ class Wuji2StreamingRetargeter:
         self.q = np.clip(q, self.hand.lo + 1e-7, self.hand.hi - 1e-7)
         self.root = None if seed_cam_T_root is None else _rigid(seed_cam_T_root, "seed_cam_T_root").copy()
         self.last_timestamp_ns = None
+        self.last_seen_timestamp_ns = None
 
     def _reject(self, reason, elapsed_ms=0.0, **diagnostic):
         result = dict(mode=self.mode, side=self.side, reason=reason,
@@ -155,7 +182,8 @@ class Wuji2StreamingRetargeter:
                                ftol=1e-9, xtol=1e-9, gtol=1e-8)
         q = answer.x[:20]
         root = _pose(Rotation.from_rotvec(answer.x[20:23]).as_matrix(), answer.x[23:26])
-        return q, root, answer
+        return q, root, answer, {"total_nfev": int(answer.nfev),
+                                 "outer_iterations": 1}
 
     def _fixed_root(self, goal, temporal):
         # A single Kabsch against neutral FK is biased whenever the MCP flex
@@ -166,7 +194,9 @@ class Wuji2StreamingRetargeter:
         q = self.q.copy()
         answer = None
         root = None
-        for _ in range(4):
+        total_nfev = 0
+        per_outer_budget = max(10, self.max_nfev // self.fixed_outer_iterations)
+        for _ in range(self.fixed_outer_iterations):
             local = self.hand.fk(q)
             rotation, translation = rigid_align(
                 local[PALM_ALIGNMENT_POINTS], goal[PALM_ALIGNMENT_POINTS])
@@ -187,35 +217,48 @@ class Wuji2StreamingRetargeter:
 
             answer = least_squares(fun, q, jac=jac,
                                    bounds=(self.hand.lo, self.hand.hi),
-                                   max_nfev=self.max_nfev, x_scale="jac",
+                                   max_nfev=per_outer_budget, x_scale="jac",
                                    ftol=1e-9, xtol=1e-9, gtol=1e-8)
+            total_nfev += int(answer.nfev)
             q = answer.x
         # Keep the returned pose consistent with the final q estimate.
         rotation, translation = rigid_align(
             self.hand.fk(q)[PALM_ALIGNMENT_POINTS],
             goal[PALM_ALIGNMENT_POINTS])
-        return q, _pose(rotation, translation), answer
+        return q, _pose(rotation, translation), answer, {
+            "total_nfev": total_nfev,
+            "outer_iterations": self.fixed_outer_iterations,
+            "nfev_budget_total": per_outer_budget * self.fixed_outer_iterations,
+        }
 
     def retarget_frame(self, keypoints, timestamp_ns, normalize=True):
         began = time.perf_counter()
         if self.q is None:
             return self._reject("begin_chunk must be called first")
+        try:
+            timestamp_ns = int(timestamp_ns)
+        except (TypeError, ValueError, OverflowError):
+            return self._reject("timestamp must be an integer")
+        if (self.last_seen_timestamp_ns is not None
+                and timestamp_ns <= self.last_seen_timestamp_ns):
+            return self._reject("timestamp is not strictly increasing within the chunk")
+        # Input time is consumed even when quality checks later reject the
+        # frame.  Solver q/root remain transactional and commit only on accept.
+        self.last_seen_timestamp_ns = timestamp_ns
         points = np.asarray(keypoints, dtype=float)
         if points.shape != (21, 3) or not np.isfinite(points).all():
             return self._reject("expected 21 finite camera-frame keypoints")
-        timestamp_ns = int(timestamp_ns)
-        if self.last_timestamp_ns is not None and timestamp_ns <= self.last_timestamp_ns:
-            return self._reject("timestamp is not strictly increasing within the chunk")
         palm = np.cross(points[5] - points[0], points[9] - points[0])
         if np.linalg.norm(palm) < 1e-8:
             return self._reject("degenerate palm keypoints")
         try:
             goal = normalized_goals(points[None], self.neutral_points)[0] if normalize else points.copy()
-            temporal = 1e-4 if self.last_timestamp_ns is None else 0.005
+            temporal = (self.temporal_first if self.last_timestamp_ns is None
+                        else self.temporal_stream)
             if self.mode == "free_root":
-                q, root, answer = self._free_root(goal, temporal)
+                q, root, answer, solver_diagnostic = self._free_root(goal, temporal)
             else:
-                q, root, answer = self._fixed_root(goal, temporal)
+                q, root, answer, solver_diagnostic = self._fixed_root(goal, temporal)
             predicted = self.hand.fk(q) @ root[:3, :3].T + root[:3, 3]
             error = np.linalg.norm(predicted - goal, axis=1)
             joint_step = float(np.max(np.abs(q - self.q)))
@@ -233,7 +276,11 @@ class Wuji2StreamingRetargeter:
                 joint_step_rad=joint_step,
                 root_translation_step_m=root_translation_step,
                 root_rotation_step_rad=root_rotation_step,
-                nfev=int(answer.nfev), status=int(answer.status),
+                nfev=int(solver_diagnostic["total_nfev"]),
+                outer_iterations=int(solver_diagnostic["outer_iterations"]),
+                nfev_budget_total=int(solver_diagnostic.get("nfev_budget_total",
+                                                             self.max_nfev)),
+                status=int(answer.status),
                 optimality=float(answer.optimality),
                 elapsed_ms=1000.0 * (time.perf_counter() - began),
                 normalized_bone_lengths=bool(normalize),

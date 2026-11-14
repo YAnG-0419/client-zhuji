@@ -39,13 +39,14 @@ class HandRetargetTests(unittest.TestCase):
         q = np.clip(q, solver.hand.lo + 0.1, solver.hand.hi - 0.1)
         root = root_pose()
         points = camera_points(solver, q, root)
-        solver.begin_chunk(q, root)
+        solver.begin_chunk(q, None)
         result = solver.retarget_frame(points, 1_000_000_000, normalize=False)
         self.assertTrue(result["accepted"], result["diagnostic"])
         translation, angle = pose_error(result["cam_T_root"], root)
         self.assertLess(translation, 1e-4)
         self.assertLess(angle, np.deg2rad(0.05))
         self.assertLess(result["diagnostic"]["all_rmse_m"], 1e-4)
+        np.testing.assert_allclose(result["q20"], q, atol=1e-4)
         nominal = np.linalg.norm(solver.hand.fk(q)[0])
         self.assertAlmostEqual(result["diagnostic"]["root_to_keypoint0_distance_m"],
                                nominal, places=9)
@@ -88,6 +89,37 @@ class HandRetargetTests(unittest.TestCase):
         self.assertIn("degenerate", rejected["diagnostic"]["reason"])
         solver.begin_chunk(q, root)
         self.assertTrue(solver.retarget_frame(points, 1, normalize=False)["accepted"])
+
+    def test_rejected_timestamp_is_still_consumed_within_chunk(self):
+        solver = Wuji2StreamingRetargeter("right", "free_root")
+        q = solver.hand.neutral.copy(); root = root_pose()
+        solver.begin_chunk(q, root)
+        self.assertFalse(solver.retarget_frame(np.zeros((21, 3)), 200)["accepted"])
+        answer = solver.retarget_frame(camera_points(solver, q, root), 150,
+                                       normalize=False)
+        self.assertFalse(answer["accepted"])
+        self.assertIn("strictly increasing", answer["diagnostic"]["reason"])
+
+    def test_runtime_and_model_joint_names_are_explicitly_separate(self):
+        solver = Wuji2StreamingRetargeter("left")
+        self.assertEqual(solver.runtime_joint_names[0], "left_finger1_joint1")
+        self.assertEqual(solver.runtime_joint_names[-1], "left_finger5_joint4")
+        self.assertEqual(solver.model_joint_names[0], "l_thumb_cmc_flex")
+        self.assertNotEqual(solver.runtime_joint_names, solver.model_joint_names)
+
+    def test_neutral_kabsch_regression_is_not_mistaken_for_rigid_points(self):
+        from hand_retarget_wuji2 import FREE_ROOT_INITIAL_POINTS, rigid_align
+        solver = Wuji2StreamingRetargeter("left")
+        q = np.clip(np.linspace(-0.5, 0.7, 20), solver.hand.lo + 0.05,
+                    solver.hand.hi - 0.05)
+        root = root_pose(); goal = camera_points(solver, q, root)
+        rotation, translation = rigid_align(
+            solver.neutral_points[FREE_ROOT_INITIAL_POINTS],
+            goal[FREE_ROOT_INITIAL_POINTS])
+        neutral_root = np.eye(4); neutral_root[:3,:3] = rotation
+        neutral_root[:3,3] = translation
+        translation_error, angle_error = pose_error(neutral_root, root)
+        self.assertTrue(translation_error > 1e-3 or angle_error > np.deg2rad(1))
 
     def test_threshold_rejection_preserves_previous_state(self):
         solver = Wuji2StreamingRetargeter("left", "free_root",
