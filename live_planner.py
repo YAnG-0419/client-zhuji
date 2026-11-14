@@ -16,7 +16,7 @@ import time
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from execution_postprocess import (apply_local_anchor, select_root_mode,
+from execution_postprocess import (apply_local_anchor,
                                    smooth_q_trajectory, smooth_root_trajectory,
                                    validate_execution_config)
 from hand_retarget_wuji2 import Wuji2StreamingRetargeter
@@ -136,7 +136,11 @@ class ChunkPlanner:
         self.client.reset()
         # humanhand: 4 native frames = 16 execution frames; realrobot: native 16.
         self.history_frames = 16
-        self.root_mode, self.root_reason = select_root_mode("auto", self.timing.contract)
+        # zhuji has Wuji hands, which match neither training hand (human for hh,
+        # Sharpa for rb).  Both contracts therefore use the bone-length-normalized
+        # free-root fit; the Sharpa-geometry Kabsch shortcut does not apply here.
+        self.root_mode = "free_root"
+        self.root_reason = "Wuji hand differs from the %s training hand" % self.timing.contract
         hand = self.config["hand_retarget"]
         self.retargeters = {side: Wuji2StreamingRetargeter(
             side, self.root_mode, thresholds=hand["thresholds"], max_nfev=hand["max_nfev"],
@@ -223,7 +227,7 @@ class ChunkPlanner:
             solver.begin_chunk(measured_q20[side], measured_root[side])
             for frame in range(self.steps):
                 answer = solver.retarget_frame(predicted[frame, side_index],
-                                               1 + frame, normalize=(self.timing.contract == "humanhand"))
+                                               1 + frame, normalize=True)
                 if not answer["accepted"]:
                     raise PlanRejected("%s retarget frame %d rejected: %s"
                                        % (side, frame, answer["diagnostic"].get("reason")))
