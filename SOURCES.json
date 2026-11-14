@@ -25,5 +25,26 @@
       "bimanual relative-pose and rigid-transform checks",
       "operator-estimated 5 cm adapter is annotation only; calibrated installation transform is used unchanged"
     ]
+  },
+  "keypoints21_to_wujihand2_vendor": {
+    "source_root": "/Users/lpy/Documents/ws/Xflow/keypoints21_to_wujihand2",
+    "copied_without_modification": [
+      "retarget.py",
+      "convert.py",
+      "README.md",
+      "WUJI_MODEL_LICENSE",
+      "WUJI_VENDORED_LICENSE",
+      "assets/wuji/"
+    ],
+    "files": 65,
+    "tree_sha256": "f3fb5e0ec0b088ddce5669b45b47a8ae24f3b62b2492864b016232cc34366485",
+    "main_file_sha256": {
+      "retarget.py": "08a6e024b7b860326be476dc8ddb61cc122173a29eb29bb62fde47ef69b759c0",
+      "convert.py": "fce6ec4b08fad1de09f18af4ecd8c9b016cf208e0e6db2a0b63df05eceb61bf3",
+      "README.md": "c1cbd0c9f6a81e05f7ce4815969e86c6c91bf59aaf01aee2fbf1285293d1c923",
+      "WUJI_MODEL_LICENSE": "38b27e3155e0c1c8d6f3e909e7a00359a302085dfd9ae963b52a91cbbe25afa3",
+      "WUJI_VENDORED_LICENSE": "38b27e3155e0c1c8d6f3e909e7a00359a302085dfd9ae963b52a91cbbe25afa3"
+    },
+    "license": "MIT; retained verbatim in the vendored directory"
   }
 }
