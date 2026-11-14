@@ -52,5 +52,12 @@
     "copied_without_modification": "vendor/xflow_deploy/wire_v4.py",
     "sha256": "6850b72c2e13ba396a201d8c0bd166120130bed91015895038619e93401c5c80",
     "protocol": "xflow_kp21_chunk_v1 / TCP wire_v4"
+  },
+  "dryrun_recorded_state_fixture": {
+    "source": "/home/guest/pengyang/record/data/20261105_135710_363516_combined_record_episode_023/bag/bag_0.db3 at top-image index 800",
+    "file": "testdata/episode023_i800_state.npz",
+    "sha256": "7edec50df3142d83cc95176016ab37500e4256912008c42d22f4fbba3a4d7d86",
+    "contents": "Measured q16, SDK EEF, Wuji q20, and 32 future measured states only; camera JPEG omitted",
+    "bag_open_mode": "sqlite URI mode=ro"
   }
 }

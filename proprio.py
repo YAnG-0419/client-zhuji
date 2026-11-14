@@ -5,7 +5,7 @@ contains no ROS node, publisher, controller, or robot transport.
 """
 from __future__ import annotations
 
-from typing import Dict, Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 
@@ -49,21 +49,32 @@ def measured_keypoints(mapping: DeploymentMapping,
                        base_T_sdk_eef: Mapping[str, np.ndarray],
                        q20: Mapping[str, Sequence[float]]) -> np.ndarray:
     """Return [left,right] MediaPipe-ordered Wuji FK points in camera optical."""
-    camera_T_base = np.linalg.inv(mapping.base_from_source_camera)
-    output = np.empty((2, 21, 3), dtype=float)
-    for side_index, side in enumerate(SIDES):
-        base_T_eef = rigid(base_T_sdk_eef[side], "base_T_%s_sdk_eef" % side)
-        q = _checked_q(side, q20[side], mapping)
-        base_T_hand = rigid(base_T_eef @ mapping.sdk_eef_from_hand[side],
-                            "base_T_%s_hand" % side)
-        camera_T_hand = rigid(camera_T_base @ base_T_hand,
-                              "camera_T_%s_hand" % side)
-        local = Hand("wuji", side).fk(q)
-        output[side_index] = (local @ camera_T_hand[:3, :3].T
-                              + camera_T_hand[:3, 3])
-    if not np.isfinite(output).all():
-        raise ValueError("proprioceptive keypoints are nonfinite")
-    return output
+    return ProprioKinematics(mapping).measured_keypoints(base_T_sdk_eef, q20)
+
+
+class ProprioKinematics:
+    """Reusable two-hand FK state for one single-threaded observation stream."""
+    def __init__(self, mapping: DeploymentMapping):
+        self.mapping = mapping
+        self.hands = {side: Hand("wuji", side) for side in SIDES}
+
+    def measured_keypoints(self, base_T_sdk_eef, q20):
+        mapping = self.mapping
+        camera_T_base = np.linalg.inv(mapping.base_from_source_camera)
+        output = np.empty((2, 21, 3), dtype=float)
+        for side_index, side in enumerate(SIDES):
+            base_T_eef = rigid(base_T_sdk_eef[side], "base_T_%s_sdk_eef" % side)
+            q = _checked_q(side, q20[side], mapping)
+            base_T_hand = rigid(base_T_eef @ mapping.sdk_eef_from_hand[side],
+                                "base_T_%s_hand" % side)
+            camera_T_hand = rigid(camera_T_base @ base_T_hand,
+                                  "camera_T_%s_hand" % side)
+            local = self.hands[side].fk(q)
+            output[side_index] = (local @ camera_T_hand[:3, :3].T
+                                  + camera_T_hand[:3, 3])
+        if not np.isfinite(output).all():
+            raise ValueError("proprioceptive keypoints are nonfinite")
+        return output
 
 
 def camera_hand_to_sdk_eef(mapping: DeploymentMapping, side: str,
