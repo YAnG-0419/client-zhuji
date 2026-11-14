@@ -39,6 +39,32 @@
     "validation_infer_budget": 10,
     "admin_commands_exposed": false
   },
+  "image_preprocess": {
+    "default": "virtual_cam0",
+    "pixel_center_convention": "K_v is exactly diag(0.5,0.8,1) @ cam0_new_K as requested; compared with strict cv2.resize center mapping this keeps a documented +0.25 px x / +0.10 px y principal-point convention difference",
+    "cam0": {
+      "source_size": [640, 400],
+      "K": [[305.5013, 0.0, 320.4261], [0.0, 305.4266, 203.6885], [0.0, 0.0, 1.0]],
+      "D": [-0.033319, 0.039518, 0.000424, 0.000207, -0.013876],
+      "new_K_alpha0": [[302.98651123046875, 0.0, 320.15414126550604], [0.0, 302.4835205078125, 203.41515968902968], [0.0, 0.0, 1.0]],
+      "roi_alpha0": [0, 0, 639, 399],
+      "virtual_K_320": [[151.49325561523438, 0.0, 160.07707063275302], [0.0, 241.98681640625, 162.73212775122374], [0.0, 0.0, 1.0]]
+    },
+    "zhuji_live_reference": {
+      "width": 640,
+      "height": 480,
+      "frame_id": "top_color_optical_frame",
+      "distortion_model": "plumb_bob",
+      "K": [[387.6802062988281, 0.0, 326.43572998046875], [0.0, 386.7615661621094, 242.3768768310547], [0.0, 0.0, 1.0]],
+      "D": [-0.05416286736726761, 0.056861527264118195, 0.0009839670965448022, 0.0003474352415651083, -0.01834084279835224]
+    },
+    "zhuji_stretch": {
+      "new_K_alpha0": [[381.6348571777344, 0.0, 326.2175580088515], [0.0, 380.6568908691406, 242.3637789453005], [0.0, 0.0, 1.0]],
+      "roi_alpha0": [0, 0, 639, 479]
+    },
+    "archive_intrinsic_relative_limit": 0.005,
+    "virtual_cam0_expected_black_border_ratio": 0.246357421875
+  },
   "timing": {
     "planning_period_s": 0.02,
     "arm_send_period_s": 0.0033333333333333335,
