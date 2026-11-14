@@ -275,6 +275,25 @@ class ChunkPlanner:
                                    % (frame, 1000 * np.max(p_error), math.degrees(np.max(r_error))))
             q_path[frame] = q
         q_path[:, 14:] = q16[14:]
+        # Stream the FK of the in-envelope joint path, as replay does, not the raw
+        # target: where a joint saturates (e.g. wrist roll at +/-0.7505) the raw
+        # target is unreachable and the controller's own IK pushes the joint past
+        # the SDK envelope.  FK(q_path) is reachable inside the envelope.
+        raw_eef = eef.copy()
+        for frame in range(self.steps):
+            position, rotation = self.pin.fk(q_path[frame])
+            for side in range(2):
+                eef[frame, side, :3] = position[side]
+                eef[frame, side, 3:] = Rotation.from_matrix(rotation[side]).as_quat()
+        fk_p = np.linalg.norm(eef[:, :, :3] - raw_eef[:, :, :3], axis=-1)
+        fk_r = np.array([[(Rotation.from_quat(raw_eef[f, s, 3:]).inv()
+                           * Rotation.from_quat(eef[f, s, 3:])).magnitude() for s in range(2)]
+                         for f in range(self.steps)])
+        report["ik_projection"] = {"max_mm": float(1000 * fk_p.max()),
+                                   "max_deg": float(np.degrees(fk_r.max())),
+                                   "joints_at_limit": [int(j) for j in range(14)
+                                                       if np.any(q_path[:, j] <= self.pin.lower[j] + 1e-3)
+                                                       or np.any(q_path[:, j] >= self.pin.upper[j] - 1e-3)]}
         stage["ik_ms"] = 1000 * (time.perf_counter() - tick)
 
         start_eef = np.stack([np.asarray(snapshot["eef_command"][i], float) for i in range(2)])
