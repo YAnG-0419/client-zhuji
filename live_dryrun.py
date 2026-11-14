@@ -14,7 +14,11 @@ import subprocess
 import time
 from types import SimpleNamespace
 
+import numpy as np
+
 from online_dryrun import _write_result, run, save_json
+from execution_postprocess import check_stationary_since_sample
+from online_dryrun import pose7_matrix
 from timing_policy import EXECUTION_CLOCK, FRAME_PER_STEP_30HZ, SYNC_HOLD
 
 
@@ -92,11 +96,27 @@ def main():
             began = time.perf_counter()
             result = run(planning_args)
             planning_ms = (time.perf_counter() - began) * 1000.0
+            dispatch_source = destination / "dispatch_observation.npz"
+            collect_snapshot(client, dispatch_source)
+            with np.load(source, allow_pickle=False) as sampled, np.load(
+                    dispatch_source, allow_pickle=False) as dispatched:
+                stationary = check_stationary_since_sample(
+                    np.stack([pose7_matrix(sampled[side + "_sdk_eef_xyzw"])
+                              for side in ("left", "right")]),
+                    np.stack([pose7_matrix(dispatched[side + "_sdk_eef_xyzw"])
+                              for side in ("left", "right")]),
+                    np.stack([sampled[side + "_wuji_q20_rad"]
+                              for side in ("left", "right")]),
+                    np.stack([dispatched[side + "_wuji_q20_rad"]
+                              for side in ("left", "right")]))
+            result["schedule"].report["stationary_assumption"] = "verified_live"
+            result["schedule"].report["stationary_check"] = stationary
             target = _write_result(destination, result)
             mode = next(iter(result["reports"].values()))
             item = {"cycle": cycle, "ros_observer": ros_output,
                     "round_trip_ms": result["rpc"].get("round_trip_ms"),
                     "planning_ms": planning_ms,
+                    "stationary_check": stationary,
                     "anchor": mode.get("anchor"),
                     "hand_speed_within_1rad_s": mode.get("hand_speed_within_1rad_s"),
                     "arm_speed_within_1rad_s": mode.get("offline_pinocchio_ik", {}).get(
@@ -105,6 +125,9 @@ def main():
                     "hardware_commands_sent": 0, "publishers_created": 0}
             save_json(destination / "report.json", item)
             summary["cycles"].append(item)
+            if not stationary["stationary"]:
+                raise RuntimeError("dispatch stationary check rejected: " +
+                                   "; ".join(stationary["rejection_reasons"]))
             summary["cycles_completed"] += 1
             summary["infer_requests"] += int(result["rpc"].get("infer_requests", 0))
             print("cycle=%d rtt_ms=%.1f planning_ms=%.1f hand_gate=%s arm_gate=%s" %

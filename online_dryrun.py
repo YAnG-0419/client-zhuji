@@ -371,6 +371,7 @@ def run(args):
                               reserve_s=config["timing"]["planning_reserve_s"],
                               mode=args.time_scale, latency_policy=latency_policy,
                               history_clock=history_clock, steps=steps)
+    schedule.report["stationary_assumption"] = "unverified_offline"
     requested_root_mode = getattr(args, "root_mode", config["hand_retarget"]["root_mode"])
     if requested_root_mode == "both":
         modes = ("free_root", "kabsch_fixed_root")
