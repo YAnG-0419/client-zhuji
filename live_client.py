@@ -47,6 +47,10 @@ SIDES = ("left", "right")
 LOCK = "/home/guest/wanchi/replay_tip_align_test_1030/.hands_replay.lock"
 CAMERA_ARCHIVE = ROOT / "calibration/camera/color_camera_info_live.json"
 EEF_TRACK_POS, EEF_TRACK_ROT = 0.04, 0.20      # replay_hand execution_cross limits
+# Before sampling the next chunk, keep holding until the arms are within
+# 2 cm / 3 deg of the command; abort only after 3 s of waiting.  Beyond the
+# 4 cm / 0.2 rad tracking guard the run stops immediately (checked every tick).
+HOLD_SETTLE_POS, HOLD_SETTLE_ROT, HOLD_SETTLE_TIMEOUT = 0.02, math.radians(3.0), 3.0
 COMMAND_STEP_POS, COMMAND_STEP_ROT = 0.006, 0.03  # per 300 Hz send; bug catcher
 OWNERS = ("wuji_teleop.switch", "wuji-teleop-switch", "tools/manus_teleop.sh", "robot_home.py",
           "axis_replay.py", "replay.py", "servo_test.py", "replay_hand.py",
@@ -407,6 +411,7 @@ def run(args, out, result):
         last_sent = None
         chunk = None; exec_start = 0.0; chunk_q16_start = q0.copy()
         settle_since = time.monotonic(); pending = None; pending_sample = None
+        hold_waiting = False
         ready_plan = None; ready_start = None; gate = StepGate()
         cycle = failures = plan_sequence = 0
         period = 1.0 / args.rate
@@ -477,17 +482,34 @@ def run(args, out, result):
                     raise RuntimeError("camera: " + str(camera.error))
 
                 # Request the next chunk once the robot has settled in hold.
+                # Hold-settle gate (operator decision 2026-11-15): the loaded arms sag
+                # 1-2 cm below the ServoP command at rest and settle after each chunk,
+                # so exceeding HOLD_SETTLE_POS/ROT first means "keep holding and wait";
+                # it aborts after HOLD_SETTLE_TIMEOUT, or at once beyond the 4 cm
+                # tracking guard checked above every tick.
+                hold_ready = False
                 if (chunk is None and pending is None and ready_plan is None and stop_reason is None
                         and now - settle_since >= args.settle and np.max(abs(dq[:14])) < 0.05):
+                    hold_ready = True
+                    if args.execute:
+                        drift_p, drift_r = pose_errors(measured_eef, command_eef)
+                        if max(drift_p) > HOLD_SETTLE_POS or max(drift_r) > HOLD_SETTLE_ROT:
+                            hold_ready = False
+                            if now - settle_since > HOLD_SETTLE_TIMEOUT:
+                                raise RuntimeError("held pose stayed %.3f m / %.3f rad from the command for %.1f s"
+                                                   % (max(drift_p), max(drift_r), HOLD_SETTLE_TIMEOUT))
+                            if not hold_waiting:
+                                print("  hold settling: %.1f mm / %.1f deg from command, waiting"
+                                      % (1000 * max(drift_p), math.degrees(max(drift_r))), flush=True)
+                            hold_waiting = True
+                if hold_ready:
+                    hold_waiting = False
                     image = camera.sample(settle_since + args.settle * 0.5, history_frames)
                     if image is not None:
                         anchor_q20 = hand_session.last.copy() if args.execute else measured_q20
                         snapshot = dict(image, q16=q.copy(), eef_measured=measured_eef,
                                         q20_measured=measured_q20, eef_command=command_eef.copy(),
                                         q20_command=anchor_q20)
-                        drift_p, drift_r = pose_errors(measured_eef, command_eef)
-                        if args.execute and (max(drift_p) > 0.02 or max(drift_r) > math.radians(3)):
-                            raise RuntimeError("held pose drifted %.3f m from the command" % max(drift_p))
                         plan_id = plan_sequence
                         plan_sequence += 1
                         connection.send({k: v for k, v in snapshot.items()})

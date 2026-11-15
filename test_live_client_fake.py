@@ -28,7 +28,8 @@ class FakeRobot:
         self.q_at = self.pose_at = time.monotonic()
 
     def _pose(self):
-        pose = {s + "_position": list(self.eef[i, :3]) for i, s in enumerate(("left", "right"))}
+        sag = getattr(FakeRobot, "default_sag", 0.0)   # constant z droop under load
+        pose = {s + "_position": list(self.eef[i, :3] - [0.0, 0.0, sag]) for i, s in enumerate(("left", "right"))}
         pose.update({s + "_quat": [self.eef[i, 6], *self.eef[i, 3:6]] for i, s in enumerate(("left", "right"))})
         return pose
 
@@ -180,7 +181,7 @@ def install_fakes(state):
     return saved
 
 
-def run_fake(robot_track=True, distance=0.02, cycles=2):
+def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0):
     quat_module = types.ModuleType("replay_quat")
 
     class QuatTrack:
@@ -191,6 +192,7 @@ def run_fake(robot_track=True, distance=0.02, cycles=2):
     state = {}
     saved = install_fakes(state)
     FakeRobot.default_track = robot_track
+    FakeRobot.default_sag = sag
     originals = (live_client.start_planner, live_client.CameraFeed,
                  live_client.validate_camera_info, live_client.camera_info_from_json)
     connection = FakeConnection(distance)
@@ -254,6 +256,20 @@ class LiveClientFakeHardwareTest(unittest.TestCase):
         execution = result["audit"]["executions"][0]
         self.assertEqual(execution["arm_guard_failure_sample_count"], 1)
         self.assertGreater(execution["eef_position_error_m"]["max"], 0.04)
+
+
+    def test_steady_sag_below_settle_gate_keeps_running(self):
+        result, error = run_fake(sag=0.015)
+        self.assertIsNone(error)
+        self.assertEqual(result["cycles_executed"], 2)
+
+    def test_sag_above_settle_gate_waits_then_holds(self):
+        began = time.monotonic()
+        result, error = run_fake(sag=0.025, cycles=2)
+        self.assertIsInstance(error, RuntimeError)
+        self.assertIn("held pose stayed", str(error))
+        self.assertGreater(time.monotonic() - began, 3.0)      # waited, did not abort at once
+        self.assertEqual(result["arm_stop"], "controller_hold")
 
 
 if __name__ == "__main__":
