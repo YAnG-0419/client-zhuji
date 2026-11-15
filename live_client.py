@@ -547,6 +547,7 @@ def run(args, out, result):
                         row.update(rtt_ms=rep["rpc"]["round_trip_ms"], stage_ms=rep["stage_ms"],
                                    duration_s=rep["timing"]["duration_s"], stretch=rep["timing"]["stretch"],
                                    binding=rep["timing"]["binding"],
+                                   ik_projection=rep.get("ik_projection"),
                                    anchor={s: dict(t_mm=1000 * rep["anchor"][s]["local_offset_translation_norm_m"],
                                                    r_deg=math.degrees(rep["anchor"][s]["local_offset_rotation_rad"]),
                                                    q_rad=rep["anchor"][s]["q_offset_abs_max_rad"],

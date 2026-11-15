@@ -33,6 +33,9 @@ EEF_BOX = np.asarray([[[.250, .732], [-.213, .900], [-.673, .5]],
                       [[.250, .732], [-.900, .213], [-.673, .5]]], dtype=float)
 
 
+IK_LIMIT_MARGIN = 0.02  # rad, see ChunkPlanner.__init__
+
+
 class PlanRejected(RuntimeError):
     """The chunk is unsafe or unusable; the executor keeps holding."""
 
@@ -171,6 +174,12 @@ class ChunkPlanner:
         from transport import replay_backend
         from hand_body_clearance import HandBodyClearance
         self.pin = PinArms()
+        # Plan arm joints at least IK_LIMIT_MARGIN inside the SDK command envelope.
+        # ServoP solves its own IK for the streamed EEF and was measured
+        # overshooting a saturated joint by ~7 mrad (right wrist roll 0.7576 vs
+        # 0.7505); a measured start outside the envelope then fails certification.
+        self.pin.lower[:14] = self.pin.lower[:14] + IK_LIMIT_MARGIN
+        self.pin.upper[:14] = self.pin.upper[:14] - IK_LIMIT_MARGIN
         _, Model, _ = replay_backend()
         self.collision = Model()
         self.hand_checker = HandBodyClearance(
@@ -350,7 +359,8 @@ class ChunkPlanner:
                                    "max_deg": float(np.degrees(fk_r.max())),
                                    "joints_at_limit": [int(j) for j in range(14)
                                                        if np.any(q_path[:, j] <= self.pin.lower[j] + 1e-3)
-                                                       or np.any(q_path[:, j] >= self.pin.upper[j] - 1e-3)]}
+                                                       or np.any(q_path[:, j] >= self.pin.upper[j] - 1e-3)],
+                                   "limit_margin_rad": IK_LIMIT_MARGIN}
         stage["ik_ms"] = 1000 * (time.perf_counter() - tick)
 
         start_eef = np.stack([np.asarray(snapshot["eef_command"][i], float) for i in range(2)])
