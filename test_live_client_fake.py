@@ -154,8 +154,9 @@ class FakeConnection:
                                "q_offset_abs_max_rad": 0.0, "decay_steps": 12} for s in ("left", "right")}}}}
 
 
-def install_fakes(state):
-    model = types.SimpleNamespace(lower=np.full(16, -3.0), upper=np.full(16, 3.0),
+def install_fakes(state, upper=None):
+    model = types.SimpleNamespace(lower=np.full(16, -3.0),
+                                  upper=np.full(16, 3.0) if upper is None else np.asarray(upper, float),
                                   set_q=lambda q: None, poses=lambda: START.copy(),
                                   model=types.SimpleNamespace(jnt_range=np.tile([-3.0, 3.0], (16, 1))),
                                   jids=np.arange(16))
@@ -181,7 +182,7 @@ def install_fakes(state):
     return saved
 
 
-def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0):
+def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None):
     quat_module = types.ModuleType("replay_quat")
 
     class QuatTrack:
@@ -190,7 +191,7 @@ def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0):
     quat_module.QuatTrack = QuatTrack
     sys.modules["replay_quat"] = quat_module
     state = {}
-    saved = install_fakes(state)
+    saved = install_fakes(state, upper)
     FakeRobot.default_track = robot_track
     FakeRobot.default_sag = sag
     originals = (live_client.start_planner, live_client.CameraFeed,
@@ -269,6 +270,22 @@ class LiveClientFakeHardwareTest(unittest.TestCase):
         self.assertIsInstance(error, RuntimeError)
         self.assertIn("held pose stayed", str(error))
         self.assertGreater(time.monotonic() - began, 3.0)      # waited, did not abort at once
+        self.assertEqual(result["arm_stop"], "controller_hold")
+
+
+    def test_large_envelope_excursion_stops_before_any_motion(self):
+        upper = np.full(16, 3.0); upper[13] = -0.10          # measured 0.0 is 0.10 rad outside
+        result, error = run_fake(upper=upper, cycles=1)
+        self.assertIsInstance(error, RuntimeError)
+        self.assertIn("outside the command envelope", str(error))
+        self.assertEqual(result["envelope_recovery"]["joints"], [13])
+        self.assertLessEqual(result["arm_motion_commands_sent"], 1)
+
+    def test_unrecoverable_small_excursion_stops_in_controller_hold(self):
+        upper = np.full(16, 3.0); upper[13] = -0.01          # fake robot never moves its joints
+        result, error = run_fake(upper=upper, cycles=1)
+        self.assertIsInstance(error, RuntimeError)
+        self.assertIn("envelope recovery did not", str(error))
         self.assertEqual(result["arm_stop"], "controller_hold")
 
 

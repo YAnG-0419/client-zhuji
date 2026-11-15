@@ -118,6 +118,71 @@ def no_emergency_stop_transport(base):
     return NoEmergencyStopTransport
 
 
+ENVELOPE_RECOVERY_MAX = 0.05     # rad; larger excursions stop instead of recovering
+ENVELOPE_RECOVERY_INSIDE = 0.02  # rad; recovered pose sits this far inside the envelope
+ENVELOPE_RECOVERY_SECONDS = 1.5
+
+
+def recover_into_envelope(robot, model, session, hand_session, quat, rate, result):
+    """Operator decision 2026-11-16: if a measured arm joint is slightly outside
+    the SDK command envelope (ServoP overshoot at a limit), slowly stream ServoP
+    to the pose with those joints clamped back inside, then verify.  Nothing is
+    relaxed: certification still requires the measured start inside the envelope.
+    Returns the commanded EEF to hold afterwards (or None when not needed).
+    """
+    q, _ = robot.healthy()
+    lower, upper = np.asarray(model.lower[:14], float), np.asarray(model.upper[:14], float)
+    excursion = np.maximum(np.maximum(lower - q[:14], q[:14] - upper), 0.0)
+    if float(excursion.max()) <= 0.0:
+        return None
+    report = dict(joints=[int(j) for j in np.flatnonzero(excursion > 0)],
+                  excursion_rad=float(excursion.max()), measured_q16=list(map(float, q)))
+    result["envelope_recovery"] = report
+    if excursion.max() > ENVELOPE_RECOVERY_MAX:
+        raise RuntimeError("arm joint %.3f rad outside the command envelope; recover manually"
+                           % excursion.max())
+    target_q = q.copy()
+    target_q[:14] = np.clip(q[:14], lower + ENVELOPE_RECOVERY_INSIDE, upper - ENVELOPE_RECOVERY_INSIDE)
+    model.set_q(target_q)
+    goal = np.asarray(model.poses(), float).copy()
+    start = sdk_pose_xyzw(robot.pose)
+    print("ENVELOPE RECOVERY: joints %s %.4f rad outside; moving back over %.1f s"
+          % (report["joints"], excursion.max(), ENVELOPE_RECOVERY_SECONDS), flush=True)
+    period, began, n, last_tick = 1.0 / rate, time.monotonic(), 0, 0.0
+    hold_q20 = hand_session.last.copy()
+    while True:
+        now = time.monotonic()
+        elapsed = now - began
+        u = min(1.0, elapsed / ENVELOPE_RECOVERY_SECONDS)
+        w = 10 * u ** 3 - 15 * u ** 4 + 6 * u ** 5
+        target = np.empty((2, 7))
+        for side in range(2):
+            target[side, :3] = start[side, :3] + w * (goal[side, :3] - start[side, :3])
+            target[side, 3:] = slerp_xyzw(start[side, 3:], goal[side, 3:], w)
+        left, right = quat(target)
+        robot.send("request_servop", {"left_pos": left.tolist(), "right_pos": right.tolist()})
+        robot.commands_sent += 1
+        robot.lease_at = time.monotonic()
+        if now - last_tick >= 0.02:
+            last_tick = now
+            q, dq, _, _ = session.tick(None, q, q)
+            hand_session.tick(hold_q20, "xflow_hold")
+            ep, er = pose_errors(sdk_pose_xyzw(robot.pose), target)
+            if max(ep) > EEF_TRACK_POS or max(er) > EEF_TRACK_ROT:
+                raise RuntimeError("EEF tracking error %.4f m during envelope recovery" % max(ep))
+            inside = np.all(q[:14] >= lower) and np.all(q[:14] <= upper)
+            if u >= 1.0 and inside and np.max(np.abs(dq[:14])) < 0.02:
+                report.update(completed=True, elapsed_s=elapsed, final_q16=list(map(float, q)))
+                print("ENVELOPE RECOVERY done in %.1f s" % elapsed, flush=True)
+                return goal
+            if elapsed > ENVELOPE_RECOVERY_SECONDS + 2.0:
+                raise RuntimeError("envelope recovery did not bring the arm inside the envelope")
+        n += 1
+        deadline = began + n * period
+        while time.monotonic() < deadline:
+            time.sleep(min(0.0005, max(0.0, deadline - time.monotonic())))
+
+
 def controller_hold(robot, result, reason, timeout_s=3.0):
     """Stop streaming and verify the controller hold; never sends an emergency stop.
 
@@ -407,6 +472,10 @@ def run(args, out, result):
         if args.execute:
             robot.arm_servop()
         quat = QuatTrack()
+        if args.execute:
+            recovered = recover_into_envelope(robot, model, session, hand_session, quat, args.rate, result)
+            if recovered is not None:
+                start_eef = recovered
         command_eef, command_q20 = start_eef.copy(), q20_start.copy()
         last_sent = None
         chunk = None; exec_start = 0.0; chunk_q16_start = q0.copy()
