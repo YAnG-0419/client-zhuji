@@ -1,0 +1,467 @@
+{
+  "motion_commands_sent": 0,
+  "execution_ready": false,
+  "model_checks": {
+    "left": {
+      "urdf_identical": true,
+      "urdf_sha256": "d93de699b5bbe0a573ea9725ebb7e6ad6547b6ed3593f7f5591664ee220648f0",
+      "mjcf_identical": true,
+      "mjcf_sha256": "d3306f4ffbe6eff9cffe95666acba6463bfd7ccf3a5c0bd12854c6c5f6586887"
+    },
+    "right": {
+      "urdf_identical": true,
+      "urdf_sha256": "f3bb5d0031a1972e06faafa8a6ab191dcf5ab5abfebbf5d27cb510ee8d004a06",
+      "mjcf_identical": true,
+      "mjcf_sha256": "d29651a7d68d1a6d5ba813edfa10b46b26748cf99430c9752defe8583c7c1001"
+    }
+  },
+  "episodes": {
+    "594": {
+      "frames": 965,
+      "duration_s": 32.133333012,
+      "sample_hz": 30.000000300000135,
+      "timestamp_valid": true,
+      "all_numeric_finite": true,
+      "alignment_version": "wuji_beta_local_z_left_p90_right_m90_v1",
+      "sides": {
+        "left": {
+          "joint_mapping_verified_from_deployed_mjcf": true,
+          "joint_names": [
+            "l_thumb_cmc_flex",
+            "l_thumb_cmc_abd",
+            "l_thumb_mcp",
+            "l_thumb_ip",
+            "l_index_finger_mcp_flex",
+            "l_index_finger_mcp_abd",
+            "l_index_finger_pip",
+            "l_index_finger_dip",
+            "l_middle_finger_mcp_flex",
+            "l_middle_finger_mcp_abd",
+            "l_middle_finger_pip",
+            "l_middle_finger_dip",
+            "l_ring_finger_mcp_flex",
+            "l_ring_finger_mcp_abd",
+            "l_ring_finger_pip",
+            "l_ring_finger_dip",
+            "l_pinky_mcp_flex",
+            "l_pinky_mcp_abd",
+            "l_pinky_pip",
+            "l_pinky_dip"
+          ],
+          "firmware_names": [
+            "left_finger1_joint1",
+            "left_finger1_joint2",
+            "left_finger1_joint3",
+            "left_finger1_joint4",
+            "left_finger2_joint1",
+            "left_finger2_joint2",
+            "left_finger2_joint3",
+            "left_finger2_joint4",
+            "left_finger3_joint1",
+            "left_finger3_joint2",
+            "left_finger3_joint3",
+            "left_finger3_joint4",
+            "left_finger4_joint1",
+            "left_finger4_joint2",
+            "left_finger4_joint3",
+            "left_finger4_joint4",
+            "left_finger5_joint1",
+            "left_finger5_joint2",
+            "left_finger5_joint3",
+            "left_finger5_joint4"
+          ],
+          "limit_violation_values": 0,
+          "max_limit_excess_rad": 0.0,
+          "max_joint_step_rad": 0.13551721367763792,
+          "peak_source_joint_speed_rad_s": 4.06551645098432,
+          "peak_speed_joint": "left_finger5_joint1",
+          "peak_speed_frame_interval": [
+            352,
+            353
+          ],
+          "uniform_source_speed_ceiling_for_1rad_s": 0.2459712098220352,
+          "scene_chain_verified": true,
+          "alignment_verified": true,
+          "scene_xyz_min_m": [
+            0.4055025890849827,
+            0.23511902159464762,
+            0.13285619180319622
+          ],
+          "scene_xyz_max_m": [
+            0.5548253788746297,
+            0.5421115764175921,
+            0.29395125184846266
+          ]
+        },
+        "right": {
+          "joint_mapping_verified_from_deployed_mjcf": true,
+          "joint_names": [
+            "r_thumb_cmc_flex",
+            "r_thumb_cmc_abd",
+            "r_thumb_mcp",
+            "r_thumb_ip",
+            "r_index_finger_mcp_flex",
+            "r_index_finger_mcp_abd",
+            "r_index_finger_pip",
+            "r_index_finger_dip",
+            "r_middle_finger_mcp_flex",
+            "r_middle_finger_mcp_abd",
+            "r_middle_finger_pip",
+            "r_middle_finger_dip",
+            "r_ring_finger_mcp_flex",
+            "r_ring_finger_mcp_abd",
+            "r_ring_finger_pip",
+            "r_ring_finger_dip",
+            "r_pinky_mcp_flex",
+            "r_pinky_mcp_abd",
+            "r_pinky_pip",
+            "r_pinky_dip"
+          ],
+          "firmware_names": [
+            "right_finger1_joint1",
+            "right_finger1_joint2",
+            "right_finger1_joint3",
+            "right_finger1_joint4",
+            "right_finger2_joint1",
+            "right_finger2_joint2",
+            "right_finger2_joint3",
+            "right_finger2_joint4",
+            "right_finger3_joint1",
+            "right_finger3_joint2",
+            "right_finger3_joint3",
+            "right_finger3_joint4",
+            "right_finger4_joint1",
+            "right_finger4_joint2",
+            "right_finger4_joint3",
+            "right_finger4_joint4",
+            "right_finger5_joint1",
+            "right_finger5_joint2",
+            "right_finger5_joint3",
+            "right_finger5_joint4"
+          ],
+          "limit_violation_values": 0,
+          "max_limit_excess_rad": 0.0,
+          "max_joint_step_rad": 0.05503518691392151,
+          "peak_source_joint_speed_rad_s": 1.6510556239281207,
+          "peak_speed_joint": "right_finger5_joint1",
+          "peak_speed_frame_interval": [
+            681,
+            682
+          ],
+          "uniform_source_speed_ceiling_for_1rad_s": 0.6056731133145248,
+          "scene_chain_verified": true,
+          "alignment_verified": true,
+          "scene_xyz_min_m": [
+            0.3424994398420864,
+            -0.5639071167822757,
+            0.1460089969140456
+          ],
+          "scene_xyz_max_m": [
+            0.5321047625455055,
+            -0.2502579843088266,
+            0.3110358174209225
+          ]
+        }
+      },
+      "existing_replay_loader": "missing replay_hand arrays: ['eef', 'hands', 'left_hand_joint_names', 'metadata_json', 'right_hand_joint_names', 't']"
+    },
+    "615": {
+      "frames": 909,
+      "duration_s": 30.266666364,
+      "sample_hz": 30.000000300000135,
+      "timestamp_valid": true,
+      "all_numeric_finite": true,
+      "alignment_version": "wuji_beta_local_z_left_p90_right_m90_v1",
+      "sides": {
+        "left": {
+          "joint_mapping_verified_from_deployed_mjcf": true,
+          "joint_names": [
+            "l_thumb_cmc_flex",
+            "l_thumb_cmc_abd",
+            "l_thumb_mcp",
+            "l_thumb_ip",
+            "l_index_finger_mcp_flex",
+            "l_index_finger_mcp_abd",
+            "l_index_finger_pip",
+            "l_index_finger_dip",
+            "l_middle_finger_mcp_flex",
+            "l_middle_finger_mcp_abd",
+            "l_middle_finger_pip",
+            "l_middle_finger_dip",
+            "l_ring_finger_mcp_flex",
+            "l_ring_finger_mcp_abd",
+            "l_ring_finger_pip",
+            "l_ring_finger_dip",
+            "l_pinky_mcp_flex",
+            "l_pinky_mcp_abd",
+            "l_pinky_pip",
+            "l_pinky_dip"
+          ],
+          "firmware_names": [
+            "left_finger1_joint1",
+            "left_finger1_joint2",
+            "left_finger1_joint3",
+            "left_finger1_joint4",
+            "left_finger2_joint1",
+            "left_finger2_joint2",
+            "left_finger2_joint3",
+            "left_finger2_joint4",
+            "left_finger3_joint1",
+            "left_finger3_joint2",
+            "left_finger3_joint3",
+            "left_finger3_joint4",
+            "left_finger4_joint1",
+            "left_finger4_joint2",
+            "left_finger4_joint3",
+            "left_finger4_joint4",
+            "left_finger5_joint1",
+            "left_finger5_joint2",
+            "left_finger5_joint3",
+            "left_finger5_joint4"
+          ],
+          "limit_violation_values": 0,
+          "max_limit_excess_rad": 0.0,
+          "max_joint_step_rad": 0.10820885783842449,
+          "peak_source_joint_speed_rad_s": 3.2462657676154065,
+          "peak_speed_joint": "left_finger3_joint1",
+          "peak_speed_frame_interval": [
+            306,
+            307
+          ],
+          "uniform_source_speed_ceiling_for_1rad_s": 0.30804625116524736,
+          "scene_chain_verified": true,
+          "alignment_verified": true,
+          "scene_xyz_min_m": [
+            0.42210286618493265,
+            0.2285460237296137,
+            0.1377252875382635
+          ],
+          "scene_xyz_max_m": [
+            0.5568824819718343,
+            0.5420462906707321,
+            0.29781811212842957
+          ]
+        },
+        "right": {
+          "joint_mapping_verified_from_deployed_mjcf": true,
+          "joint_names": [
+            "r_thumb_cmc_flex",
+            "r_thumb_cmc_abd",
+            "r_thumb_mcp",
+            "r_thumb_ip",
+            "r_index_finger_mcp_flex",
+            "r_index_finger_mcp_abd",
+            "r_index_finger_pip",
+            "r_index_finger_dip",
+            "r_middle_finger_mcp_flex",
+            "r_middle_finger_mcp_abd",
+            "r_middle_finger_pip",
+            "r_middle_finger_dip",
+            "r_ring_finger_mcp_flex",
+            "r_ring_finger_mcp_abd",
+            "r_ring_finger_pip",
+            "r_ring_finger_dip",
+            "r_pinky_mcp_flex",
+            "r_pinky_mcp_abd",
+            "r_pinky_pip",
+            "r_pinky_dip"
+          ],
+          "firmware_names": [
+            "right_finger1_joint1",
+            "right_finger1_joint2",
+            "right_finger1_joint3",
+            "right_finger1_joint4",
+            "right_finger2_joint1",
+            "right_finger2_joint2",
+            "right_finger2_joint3",
+            "right_finger2_joint4",
+            "right_finger3_joint1",
+            "right_finger3_joint2",
+            "right_finger3_joint3",
+            "right_finger3_joint4",
+            "right_finger4_joint1",
+            "right_finger4_joint2",
+            "right_finger4_joint3",
+            "right_finger4_joint4",
+            "right_finger5_joint1",
+            "right_finger5_joint2",
+            "right_finger5_joint3",
+            "right_finger5_joint4"
+          ],
+          "limit_violation_values": 0,
+          "max_limit_excess_rad": 0.0,
+          "max_joint_step_rad": 0.07792788803520645,
+          "peak_source_joint_speed_rad_s": 2.337836664434446,
+          "peak_speed_joint": "right_finger5_joint1",
+          "peak_speed_frame_interval": [
+            753,
+            754
+          ],
+          "uniform_source_speed_ceiling_for_1rad_s": 0.4277458794333322,
+          "scene_chain_verified": true,
+          "alignment_verified": true,
+          "scene_xyz_min_m": [
+            0.3462264456530645,
+            -0.5653064127100307,
+            0.1451835249213899
+          ],
+          "scene_xyz_max_m": [
+            0.5385723209713432,
+            -0.20387975738881273,
+            0.3129752310246849
+          ]
+        }
+      },
+      "existing_replay_loader": "missing replay_hand arrays: ['eef', 'hands', 'left_hand_joint_names', 'metadata_json', 'right_hand_joint_names', 't']"
+    },
+    "616": {
+      "frames": 1263,
+      "duration_s": 42.066666246,
+      "sample_hz": 30.000000300000135,
+      "timestamp_valid": true,
+      "all_numeric_finite": true,
+      "alignment_version": "wuji_beta_local_z_left_p90_right_m90_v1",
+      "sides": {
+        "left": {
+          "joint_mapping_verified_from_deployed_mjcf": true,
+          "joint_names": [
+            "l_thumb_cmc_flex",
+            "l_thumb_cmc_abd",
+            "l_thumb_mcp",
+            "l_thumb_ip",
+            "l_index_finger_mcp_flex",
+            "l_index_finger_mcp_abd",
+            "l_index_finger_pip",
+            "l_index_finger_dip",
+            "l_middle_finger_mcp_flex",
+            "l_middle_finger_mcp_abd",
+            "l_middle_finger_pip",
+            "l_middle_finger_dip",
+            "l_ring_finger_mcp_flex",
+            "l_ring_finger_mcp_abd",
+            "l_ring_finger_pip",
+            "l_ring_finger_dip",
+            "l_pinky_mcp_flex",
+            "l_pinky_mcp_abd",
+            "l_pinky_pip",
+            "l_pinky_dip"
+          ],
+          "firmware_names": [
+            "left_finger1_joint1",
+            "left_finger1_joint2",
+            "left_finger1_joint3",
+            "left_finger1_joint4",
+            "left_finger2_joint1",
+            "left_finger2_joint2",
+            "left_finger2_joint3",
+            "left_finger2_joint4",
+            "left_finger3_joint1",
+            "left_finger3_joint2",
+            "left_finger3_joint3",
+            "left_finger3_joint4",
+            "left_finger4_joint1",
+            "left_finger4_joint2",
+            "left_finger4_joint3",
+            "left_finger4_joint4",
+            "left_finger5_joint1",
+            "left_finger5_joint2",
+            "left_finger5_joint3",
+            "left_finger5_joint4"
+          ],
+          "limit_violation_values": 0,
+          "max_limit_excess_rad": 0.0,
+          "max_joint_step_rad": 0.07203086317408458,
+          "peak_source_joint_speed_rad_s": 2.1609259168318062,
+          "peak_speed_joint": "left_finger3_joint1",
+          "peak_speed_frame_interval": [
+            350,
+            351
+          ],
+          "uniform_source_speed_ceiling_for_1rad_s": 0.46276459188667046,
+          "scene_chain_verified": true,
+          "alignment_verified": true,
+          "scene_xyz_min_m": [
+            0.4047436122541554,
+            0.22347391620588256,
+            0.15428310475079943
+          ],
+          "scene_xyz_max_m": [
+            0.5497308206879884,
+            0.5403772694921029,
+            0.31464648144787927
+          ]
+        },
+        "right": {
+          "joint_mapping_verified_from_deployed_mjcf": true,
+          "joint_names": [
+            "r_thumb_cmc_flex",
+            "r_thumb_cmc_abd",
+            "r_thumb_mcp",
+            "r_thumb_ip",
+            "r_index_finger_mcp_flex",
+            "r_index_finger_mcp_abd",
+            "r_index_finger_pip",
+            "r_index_finger_dip",
+            "r_middle_finger_mcp_flex",
+            "r_middle_finger_mcp_abd",
+            "r_middle_finger_pip",
+            "r_middle_finger_dip",
+            "r_ring_finger_mcp_flex",
+            "r_ring_finger_mcp_abd",
+            "r_ring_finger_pip",
+            "r_ring_finger_dip",
+            "r_pinky_mcp_flex",
+            "r_pinky_mcp_abd",
+            "r_pinky_pip",
+            "r_pinky_dip"
+          ],
+          "firmware_names": [
+            "right_finger1_joint1",
+            "right_finger1_joint2",
+            "right_finger1_joint3",
+            "right_finger1_joint4",
+            "right_finger2_joint1",
+            "right_finger2_joint2",
+            "right_finger2_joint3",
+            "right_finger2_joint4",
+            "right_finger3_joint1",
+            "right_finger3_joint2",
+            "right_finger3_joint3",
+            "right_finger3_joint4",
+            "right_finger4_joint1",
+            "right_finger4_joint2",
+            "right_finger4_joint3",
+            "right_finger4_joint4",
+            "right_finger5_joint1",
+            "right_finger5_joint2",
+            "right_finger5_joint3",
+            "right_finger5_joint4"
+          ],
+          "limit_violation_values": 0,
+          "max_limit_excess_rad": 0.0,
+          "max_joint_step_rad": 0.09523973697560506,
+          "peak_source_joint_speed_rad_s": 2.857192137840238,
+          "peak_speed_joint": "right_finger3_joint1",
+          "peak_speed_frame_interval": [
+            949,
+            950
+          ],
+          "uniform_source_speed_ceiling_for_1rad_s": 0.34999396321869475,
+          "scene_chain_verified": true,
+          "alignment_verified": true,
+          "scene_xyz_min_m": [
+            0.330917231600006,
+            -0.568270588343044,
+            0.1391184975280973
+          ],
+          "scene_xyz_max_m": [
+            0.5301201895462853,
+            -0.2145133899193519,
+            0.33197670949425157
+          ]
+        }
+      },
+      "existing_replay_loader": "missing replay_hand arrays: ['eef', 'hands', 'left_hand_joint_names', 'metadata_json', 'right_hand_joint_names', 't']"
+    }
+  }
+}

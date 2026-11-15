@@ -1,0 +1,12 @@
+{
+  "model": "wuji2",
+  "source": "/home/descfly/Xflow/traj_21keypoints/replay_test/inroom/whiteboard_20261113_103641/keypoints21_camera.npz",
+  "frames": 602,
+  "target_fps": 29.969730572122156,
+  "duplicate_source_frames": 0,
+  "legacy_timestamp_adapter": true,
+  "source_sha256": "69f8f7da1f0b8dbc8380ceeef2db77dd024b416d9aed7a695790fa9de3bf0323",
+  "frame": "undistorted_color_optical",
+  "free_root": true,
+  "arm_ik": false
+}

@@ -1,0 +1,286 @@
+{
+  "metadata": {
+    "schema": "replay_hand_cross_v1",
+    "frame": "tron2_base_link",
+    "placement_policy": "preserve_common_frame_v1",
+    "execution_ready": false,
+    "motion_commands_sent": 0,
+    "source_stream": "keypoints21_camera.npz:joints_camera_m",
+    "source_camera_id": "orbbec_gemini_335",
+    "source_frame": "undistorted_color_optical",
+    "alignment_version": "human_camera_direct_fit_v1",
+    "source_files": {
+      "/home/guest/pengyang/replay_robot/inroom_tidying_20261112_234955_20261115/inputs/wuji2_camera_replay_trajectory.npz": "8b6c398e4449fa6fa21fbddbef64115243781a70aa3cd8dbba41201a83ee1572",
+      "/home/guest/pengyang/replay_robot/inroom_tidying_20261112_234955_20261115/inputs/source_observation.json": "7f1093a005f55020edaa4341fba2dfd0b598ad7adb17b02df42fb58315a4e73c",
+      "/home/guest/pengyang/replay_robot/inroom_tidying_20261112_234955_20261115/inputs/zhuji_observation.json": "e729a0f1bd564e5b333e9b932eec61be73a9e26e882792230932b5f2f622648e",
+      "/home/guest/pengyang/replay_robot/inroom_tidying_20261112_234955_20261115/inputs/zhuji_camera_41p5.json": "7657d89f5ba26840a4fd399f2a95490437fecc4122b686884c5156f11ee0864f",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/alignment_config.json": "f2ff95e41fcf2c91dae9d867966c15b42221b6ea098304215b56c4efd2d6b177",
+      "/home/guest/pengyang/teleop/wuji_control/config/joint_limits.json": "4b8276883107432483d42247bd85382ad0e9db70c6eb5f869e053ad4c124611e",
+      "replay_robot/inroom_tidying_20261112_234955_20261115/convert_camera_trajectory.py": "c20927a93ba4a9be5cf3c379ddaf6fb69c0630ceea8d35c396716226a22f8fe4",
+      "/home/guest/pengyang/replay_hand/build_board_aligned395.py": "ea68ab230400fbd7e11dcd8d07e8990f95c52e2de3b5f988904c641d469132ae",
+      "/home/guest/pengyang/replay_hand/build_exported_trajectory.py": "1316edf290290ca1ebf03fe20500863e8e186c50a6e63e287a39cacff20e6660",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/calibration/left.json": "15afa40afb6fa7951989d4f5c26b161288ef3c6f32a95e53f1e551f027f1f208",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/calibration/right.json": "8d4505b9ae3401d0c5bb028e90b0b6c12f6c08e23918c6d5752fb08fa0f18dae"
+    },
+    "target_head_pitch_yaw_rad": [
+      0.7236999869346619,
+      -0.0006998220924288034
+    ],
+    "controlled_hand_origin": "B = Wuji base_link origin = confirmed board center",
+    "task_placement": {
+      "method": "Corresponding observed task-board frames; no additional task repositioning",
+      "target_camera_T_source_camera": [
+        [
+          0.9997230369737449,
+          -0.003883597079908672,
+          0.02321135536138286,
+          -0.012854603533171388
+        ],
+        [
+          0.004326896798593022,
+          0.9998086205597289,
+          -0.019078789755828315,
+          0.02920273681840277
+        ],
+        [
+          -0.023132818853002265,
+          0.0191739387756846,
+          0.9995485144622744,
+          -0.05507571979636949
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_tron_base_source_camera": [
+        [
+          -0.01162547080257546,
+          -0.6484850676278391,
+          0.761138598083381,
+          0.10670977533895191
+        ],
+        [
+          -0.9998859840367627,
+          0.0002031937468404475,
+          -0.015098928410148335,
+          0.0019466124287755016
+        ],
+        [
+          0.009636771007553295,
+          -0.761227348284347,
+          -0.6484134922011797,
+          0.380266741496308
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "board_fingerprint": "437d28755b5102513fd2204b356c468f7d9618172b30ba59d7d60f049d63d928",
+      "physical_validation_complete": false
+    },
+    "per_arm_reanchoring_allowed": false,
+    "additional_rigid_task_placement_applied": false,
+    "hand_retargeting_applied": false,
+    "local_z_correction_applied": false,
+    "wrist_offset_added": false,
+    "adapter_length_added": false,
+    "bimanual_relative_matrix_error_max": 4.440892098500626e-16,
+    "assumptions": [
+      "User-supplied Orbbec observation corresponds to this trajectory camera and unchanged mounting.",
+      "Undistorted color optical coordinates use the original optical axes; no extra rectification rotation.",
+      "Corresponding board placements define task origins and axes.",
+      "Existing 41.5-degree target camera-to-base estimate remains applicable; not independently physically validated."
+    ],
+    "timestamp_semantics": "Source device clock preserved; not asserted to be Unix epoch",
+    "time_preprocessing": "Position linear / orientation Slerp / finger linear interpolation at original times; no duration scaling.",
+    "original_sample_max_gap_s": 0.033625999999999934,
+    "original_frames": 241,
+    "sides": {
+      "left": {
+        "T_sdk_eef_board_center": [
+          [
+            -0.02590094258816275,
+            -0.9996081244360443,
+            0.01061784980578053,
+            -0.00996297150940903
+          ],
+          [
+            -0.999372116085139,
+            0.025635028718964992,
+            -0.024458513734241377,
+            0.0009822991955358573
+          ],
+          [
+            0.02417674015567469,
+            -0.011244681588699984,
+            -0.9996444579806426,
+            0.07211807440614258
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "T_board_center_hand": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "target_xyz_min_m": [
+          0.4310703502251443,
+          0.017656771203595316,
+          -0.20936082275047121
+        ],
+        "target_xyz_max_m": [
+          0.526305984919943,
+          0.2787692100957177,
+          0.057185703325742354
+        ],
+        "hand_speed_peak_rad_s": 1.1353822470214492,
+        "hand_limit_min_margin_rad": 0.26628569593320606
+      },
+      "right": {
+        "T_sdk_eef_board_center": [
+          [
+            -0.9997037179644264,
+            -0.02275891205402541,
+            0.008631813842967982,
+            -0.002983798934724363
+          ],
+          [
+            -0.022621045977565164,
+            0.9996200936999531,
+            0.015746636154322848,
+            0.0008311730062506711
+          ],
+          [
+            -0.008986910869891417,
+            0.015546710051098015,
+            -0.9998387546197653,
+            0.06894403937416507
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "T_board_center_hand": [
+          [
+            0.0,
+            -1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "target_xyz_min_m": [
+          0.3642012804473104,
+          -0.30672292937408746,
+          -0.23590201257803695
+        ],
+        "target_xyz_max_m": [
+          0.47594146123880204,
+          -0.07106239123619917,
+          0.061604407544760695
+        ],
+        "hand_speed_peak_rad_s": 1.6028736655502873,
+        "hand_limit_min_margin_rad": 0.25964272296562796
+      }
+    }
+  },
+  "source_frames": 241,
+  "adapted_frames": 402,
+  "duration_s": 8.009763,
+  "task_mapping_translation_m": [
+    -0.012854603533171388,
+    0.02920273681840277,
+    -0.05507571979636949
+  ],
+  "task_mapping_rotation_deg": 1.7377711881523579,
+  "observation_closure_max_abs": 1.1102230246251565e-16,
+  "source_observation_quality": {
+    "reprojection_rms_px_mean": 0.24064235595556405,
+    "reprojection_rms_px_max": 0.2968446910381317,
+    "translation_spread_max_mm": 0.4955987709478693,
+    "rotation_spread_max_deg": 0.18821225270939762,
+    "min_inlier_corners": 40
+  },
+  "target_observation_quality": {
+    "reprojection_rms_px_mean": 0.05289260869224866,
+    "reprojection_rms_px_max": 0.15380842983722687,
+    "translation_spread_max_mm": 1.09164619025237,
+    "rotation_spread_max_deg": 0.32303262956819867,
+    "min_inlier_corners": 20
+  },
+  "first_sdk_eef_xyz_m": [
+    [
+      0.44086537058768804,
+      0.19728647803848665,
+      -0.04047345631138398
+    ],
+    [
+      0.4071161481583645,
+      -0.22472381997440422,
+      -0.04808171543135664
+    ]
+  ],
+  "servo_box_outside_source_frames_per_arm": [
+    0,
+    0
+  ],
+  "original_gap_exceeds_loader_limit_count": 0,
+  "source_sample_artifact": "/home/guest/pengyang/replay_robot/inroom_tidying_20261112_234955_20261115/converted_source_samples.npz",
+  "replay_input": "/home/guest/pengyang/replay_robot/inroom_tidying_20261112_234955_20261115/replay_input_50hz.npz",
+  "replay_input_sha256": "1a09203a70bd46025824d8d20376c876da5327da5ed0365600faddaa10b735ce",
+  "loader_passed": true,
+  "extra_task_repositioning_applied": false,
+  "hardware_commands_sent": 0
+}

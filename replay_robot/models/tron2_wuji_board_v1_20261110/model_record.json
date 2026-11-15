@@ -1,0 +1,509 @@
+{
+  "version": "tron2_wuji_board_v1_20261110",
+  "authority": "operator-confirmed in chat",
+  "model_usage": "Offline assembly model and frozen conversion reference; not installed into existing motion planners",
+  "configuration_usage": "Existing align_board_frames.py can use this alignment_config.json with --config",
+  "joints": 56,
+  "mesh_files": 68,
+  "assembly": {
+    "left": {
+      "T_wrist_roll_sdk_eef": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -0.0338
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.2125
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_sdk_eef_board_center": [
+        [
+          -0.02590094258816275,
+          -0.9996081244360443,
+          0.01061784980578053,
+          -0.00996297150940903
+        ],
+        [
+          -0.999372116085139,
+          0.025635028718964992,
+          -0.024458513734241377,
+          0.0009822991955358573
+        ],
+        [
+          0.02417674015567469,
+          -0.011244681588699984,
+          -0.9996444579806426,
+          0.07211807440614258
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_board_center_hand": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "adapter_visual_length_m": 0.06040679192229332
+    },
+    "right": {
+      "T_wrist_roll_sdk_eef": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -0.0338
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.2125
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_sdk_eef_board_center": [
+        [
+          -0.9997037179644264,
+          -0.02275891205402541,
+          0.008631813842967982,
+          -0.002983798934724363
+        ],
+        [
+          -0.022621045977565164,
+          0.9996200936999531,
+          0.015746636154322848,
+          0.0008311730062506711
+        ],
+        [
+          -0.008986910869891417,
+          0.015546710051098015,
+          -0.9998387546197653,
+          0.06894403937416507
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_board_center_hand": [
+        [
+          0.0,
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "adapter_visual_length_m": 0.06256837608365506
+    }
+  },
+  "validation": {
+    "fk_reference_cases": 3,
+    "fk_matrix_max_abs_error": 9.471590178833367e-16,
+    "all_mesh_references_resolved": true,
+    "frozen_config_episode594_arrays_identical": true
+  },
+  "adapter": {
+    "operator_approximate_length_m": 0.05,
+    "visual_radius_m": 0.018,
+    "radius_measured": false,
+    "collision_included": false
+  },
+  "source_scene_to_tron_base": null,
+  "execution_ready": false,
+  "motion_commands_sent": 0,
+  "source_files": {
+    "/home/guest/pengyang/record/config/model/robot.urdf": {
+      "sha256": "17854fde22b27af58148f11fd449694888a63c702c1c46f4097fa1a059d79357",
+      "snapshot": "sources/tron2_original.urdf"
+    },
+    "/home/guest/pengyang/record/config/model/robot_description_LICENSE": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "snapshot": "licenses/TRON2_LICENSE"
+    },
+    "/home/guest/pengyang/replay_robot/traj/sharpa_to_wuji2_beta/WUJI_MODEL_LICENSE": {
+      "sha256": "38b27e3155e0c1c8d6f3e909e7a00359a302085dfd9ae963b52a91cbbe25afa3",
+      "snapshot": "licenses/WUJI_MODEL_LICENSE"
+    },
+    "/home/guest/pengyang/replay_robot/traj/sharpa_to_wuji2_beta/WUJI_VENDORED_LICENSE": {
+      "sha256": "38b27e3155e0c1c8d6f3e909e7a00359a302085dfd9ae963b52a91cbbe25afa3",
+      "snapshot": "licenses/WUJI_VENDORED_LICENSE"
+    },
+    "/home/guest/pengyang/replay_robot/board_frame_alignment.json": {
+      "sha256": "8e3f9eb4bed914a4499312e72df409d2b111315e64296a3e20d35357d841d302",
+      "snapshot": "sources/board_frame_alignment_original.json"
+    },
+    "/home/guest/pengyang/replay_robot/adapter_observation_20261110.json": {
+      "sha256": "633b67514a9f25a166fb78ea8bcb101b5de7826085fa22311aac80b0b0913391",
+      "snapshot": "adapter_observation.json"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/base_Link.STL": {
+      "sha256": "25b6fc44a8455e116c24ca636628f648426c26ad9b2903d10719ca387f999abc",
+      "snapshot": "meshes/tron2/base_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/base_2_Link.STL": {
+      "sha256": "0949b4cc8fe9908e42cadbd700b20248b813e216e37c36b4c5ed3c05f2132659",
+      "snapshot": "meshes/tron2/base_2_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/base_3_Link.STL": {
+      "sha256": "e97bbbb149445b4ce2a7df2589b53ac03045c0386e64590eb2efc5d3524c2fce",
+      "snapshot": "meshes/tron2/base_3_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/head_base_Link.STL": {
+      "sha256": "e6b25387d68c6f04d6dcd02921ba1f3c4dcec0643d1ef7c0695c25edc45efb06",
+      "snapshot": "meshes/tron2/head_base_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/head_yaw_Link.STL": {
+      "sha256": "de86690ddec7325c3ba475b793ef0553451c497fc7f0debe65b249ba014b7a52",
+      "snapshot": "meshes/tron2/head_yaw_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/head_pitch_Link.STL": {
+      "sha256": "dc4b2b780fddbf176694181c7c4b8ef532fc78eb8f8cf2f08b6ab26add131481",
+      "snapshot": "meshes/tron2/head_pitch_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_pitch_L_Link.STL": {
+      "sha256": "171103f1f263229576012211466e138c99dccc5a8550d5d3492c2f94e82fadac",
+      "snapshot": "meshes/tron2/proximal_pitch_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_roll_L_Link.STL": {
+      "sha256": "c416c88546061b0cd1a4500e327af0bc9f7cac0f8ef500ff86b63bf72d37ec86",
+      "snapshot": "meshes/tron2/proximal_roll_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_L_Link.STL": {
+      "sha256": "8e5253aed24455af89b99b253b102c1f71049375a1b7ad11fba32ef27339cde1",
+      "snapshot": "meshes/tron2/proximal_yaw_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_L_Link_collision.STL": {
+      "sha256": "f2b044dde500d8cbdbdfc91aecbe48520488d739685396d1e6ce8b865be76df8",
+      "snapshot": "meshes/tron2/proximal_yaw_L_Link_collision.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/elbow_L_Link.STL": {
+      "sha256": "46497ab102b97d2ab6989fe045d3a9f1a2643d550b05e2a4c4b064eb550a1857",
+      "snapshot": "meshes/tron2/elbow_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_yaw_L_Link.STL": {
+      "sha256": "4124b79f0550554c60a604002fe7d86945de937d38040cac44ff5d7e772115ec",
+      "snapshot": "meshes/tron2/wrist_yaw_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_pitch_L_Link.STL": {
+      "sha256": "8aedb74d479b723b522395d8d4684ebeb1d17468a785442ccdd7e725082071d6",
+      "snapshot": "meshes/tron2/wrist_pitch_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_L_Link.STL": {
+      "sha256": "3dd3da5518daef34c5b085c0bd774090967634d49de0c4a5b59d2f9fd84014f2",
+      "snapshot": "meshes/tron2/wrist_roll_L_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_L_Link_collision.STL": {
+      "sha256": "bcf56e6ce5a65bae40b6becfbe83c341a34556c516e686c0c2fdd943d3da6ca5",
+      "snapshot": "meshes/tron2/wrist_roll_L_Link_collision.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_pitch_R_Link.STL": {
+      "sha256": "4740dbcf4899717de6fb8adf11766f163679ecee0fdf8a6ec06f6bdf9f8bcf7c",
+      "snapshot": "meshes/tron2/proximal_pitch_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_roll_R_Link.STL": {
+      "sha256": "be9df467853b4c12938c7e80b95e7a7542506019d321291481b9967a050a6204",
+      "snapshot": "meshes/tron2/proximal_roll_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_R_Link.STL": {
+      "sha256": "e2dc549ce47bb1fb833b0dfe5aa2a29c25f89a581fda343d3b2726cce0c27995",
+      "snapshot": "meshes/tron2/proximal_yaw_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_R_Link_collision.STL": {
+      "sha256": "697b41afc439a30e0fb51bfcf7ffdce4d3da8bf3a20ce64846254bba58adb487",
+      "snapshot": "meshes/tron2/proximal_yaw_R_Link_collision.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/elbow_R_Link.STL": {
+      "sha256": "956b51d6896448839193224a7fbb07ec3660dd4601f97caf2c1a87192a443d7e",
+      "snapshot": "meshes/tron2/elbow_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_yaw_R_Link.STL": {
+      "sha256": "a22e01ab09be564b16685ca00c263561ee781bfe11c08d84519f300a307a7969",
+      "snapshot": "meshes/tron2/wrist_yaw_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_pitch_R_Link.STL": {
+      "sha256": "c16046ed84cecd27ac1ddf1ba5c3ae3e63cc2a006dd00097a97a7cadb5b8b763",
+      "snapshot": "meshes/tron2/wrist_pitch_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_R_Link.STL": {
+      "sha256": "ca68b01599b1cb941ceec2f7cc106cc7926b023ad884cf1cfc69ec3ca40367c9",
+      "snapshot": "meshes/tron2/wrist_roll_R_Link.STL"
+    },
+    "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_R_Link_collision.STL": {
+      "sha256": "7f750db7fdcfd687d40766759c4d5e9702289d1e05fe6000cf7f286a99ea5661",
+      "snapshot": "meshes/tron2/wrist_roll_R_Link_collision.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/urdf/left.urdf": {
+      "sha256": "d93de699b5bbe0a573ea9725ebb7e6ad6547b6ed3593f7f5591664ee220648f0",
+      "snapshot": "sources/wuji_left_original.urdf"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_base_link.STL": {
+      "sha256": "93e352d90a77fb26243ac6626e170fcea55f5927af5c41a146ac35be056260d5",
+      "snapshot": "meshes/wuji_left/l_base_link.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_thumb_proximal.STL": {
+      "sha256": "32c453f45ba06cb05dc747108c8e7305c238cfd70f0fbef9ba3c4272479d23ec",
+      "snapshot": "meshes/wuji_left/l_thumb_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_thumb_proximal_abd.STL": {
+      "sha256": "09132b05c61ceb1faaf8f825557b0f4420a212baa0fb7df1bd017d8228a97998",
+      "snapshot": "meshes/wuji_left/l_thumb_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_thumb_middle.STL": {
+      "sha256": "b24e68e2b0e2cb03812382760e987a57245143c1392d9cd21af16cba425de75f",
+      "snapshot": "meshes/wuji_left/l_thumb_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_thumb_distal.STL": {
+      "sha256": "bd900c277cf2fc54c1a27bdb15b3d2f832ad5fdf1a666ff4449a19a1bea0945d",
+      "snapshot": "meshes/wuji_left/l_thumb_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_index_finger_proximal.STL": {
+      "sha256": "11fe22bbacf3368ea2f54fa9587442442f310de0d90a9bbe541f3c6229b864da",
+      "snapshot": "meshes/wuji_left/l_index_finger_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_index_finger_proximal_abd.STL": {
+      "sha256": "4b9b5c9dd96837fe783e3e874b46c8d9bccaacc546d7889bf39b39068e8e99a2",
+      "snapshot": "meshes/wuji_left/l_index_finger_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_index_finger_middle.STL": {
+      "sha256": "e9c2c690ba8f1919c25e67391f38689f66757da966e5c9383560bef856f450f9",
+      "snapshot": "meshes/wuji_left/l_index_finger_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_index_finger_distal.STL": {
+      "sha256": "1c30a792d1f8290ff48df614ad34395a2685c2aeed65f3c8d781d8a774a2ac25",
+      "snapshot": "meshes/wuji_left/l_index_finger_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_middle_finger_proximal.STL": {
+      "sha256": "37ec151ef133907bf98b687d8836784c19c9ef68175ca7768f591fc41d6d4a37",
+      "snapshot": "meshes/wuji_left/l_middle_finger_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_middle_finger_proximal_abd.STL": {
+      "sha256": "3c5d0e79f2effa650285271b068c5ba8cc5982bdf57f73b311eb27accee52c28",
+      "snapshot": "meshes/wuji_left/l_middle_finger_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_middle_finger_middle.STL": {
+      "sha256": "481c6c96c029f4a4c5d1e3c4a60bb929b9ec5230c250283f3a914b107ee7ce9c",
+      "snapshot": "meshes/wuji_left/l_middle_finger_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_middle_finger_distal.STL": {
+      "sha256": "5a85b0deb7d0ab61e8713bdbbf5a813462079a99411ee7c3b86c55d3200772bb",
+      "snapshot": "meshes/wuji_left/l_middle_finger_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_ring_finger_proximal.STL": {
+      "sha256": "dc50f0ee73d3636ca53006389c844f72b9fec08e67f1c0deecf7b88fd291eabf",
+      "snapshot": "meshes/wuji_left/l_ring_finger_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_ring_finger_proximal_abd.STL": {
+      "sha256": "4440d69ce6e13fac216750bcd5a060af8850bfe02977c14d5806c47fbf878db0",
+      "snapshot": "meshes/wuji_left/l_ring_finger_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_ring_finger_middle.STL": {
+      "sha256": "f84844f79c93895d5291367dba4c845dc280b7650067b23859750303ee05dbb1",
+      "snapshot": "meshes/wuji_left/l_ring_finger_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_ring_finger_distal.STL": {
+      "sha256": "f5a6c46eedc20f9bb8751b17bc6bbabfdd2b48b93e5c1e1fa032c71d0e732d75",
+      "snapshot": "meshes/wuji_left/l_ring_finger_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_pinky_proximal.STL": {
+      "sha256": "627a52e0d673f8ccf2388843b99843e7317ffdcb69c9a6bfb9aad249bdfd77b0",
+      "snapshot": "meshes/wuji_left/l_pinky_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_pinky_proximal_abd.STL": {
+      "sha256": "d36fe36876fe84d81b3f78555a4d18bcb334e300068c40c3ef884c9ddde0f6e5",
+      "snapshot": "meshes/wuji_left/l_pinky_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_pinky_middle.STL": {
+      "sha256": "b07d627d6be06b7555110b2ee9b87c3e4b58b02852cf7875526a123190bcb7ac",
+      "snapshot": "meshes/wuji_left/l_pinky_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_pinky_distal.STL": {
+      "sha256": "ddeb1084411dcc358ef502320ad9849cde0ad693b122b2bf880399d5ddecc3c1",
+      "snapshot": "meshes/wuji_left/l_pinky_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/left/l_wrist.STL": {
+      "sha256": "a0eb15fd72a809c8f3b7c2e0bdfa4db21ca8b5ea9d5e940fb466d14836581404",
+      "snapshot": "meshes/wuji_left/l_wrist.STL"
+    },
+    "/home/guest/pengyang/calibration/left_arm/handeye_result_current.json": {
+      "sha256": "15afa40afb6fa7951989d4f5c26b161288ef3c6f32a95e53f1e551f027f1f208",
+      "snapshot": "calibration/left.json"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/urdf/right.urdf": {
+      "sha256": "f3bb5d0031a1972e06faafa8a6ab191dcf5ab5abfebbf5d27cb510ee8d004a06",
+      "snapshot": "sources/wuji_right_original.urdf"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_base_link.STL": {
+      "sha256": "6e24c69ce617ef95ae61ad26a25d2d9df2dcdf6d7de6ba45819c0ae01a9dfab7",
+      "snapshot": "meshes/wuji_right/r_base_link.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_thumb_proximal.STL": {
+      "sha256": "d48d132c6689333ef42e2a07ee5b39edfa02c43703d1cd0dedfc0ac4b108473b",
+      "snapshot": "meshes/wuji_right/r_thumb_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_thumb_proximal_abd.STL": {
+      "sha256": "b03f0038f2bd774b79d20a1552a50107888baddd19ae58bad51fc5460b0f2f30",
+      "snapshot": "meshes/wuji_right/r_thumb_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_thumb_middle.STL": {
+      "sha256": "51aa067dfc04cd95f68498d2ee14928b2745a158a69fb7d03912f324fb586503",
+      "snapshot": "meshes/wuji_right/r_thumb_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_thumb_distal.STL": {
+      "sha256": "1376c75233a5be524e26f838dff22ac541d6d34d3e027007104c43b6dc89426c",
+      "snapshot": "meshes/wuji_right/r_thumb_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_index_finger_proximal.STL": {
+      "sha256": "21d353a3a20d50fca4a52a38161ec6b573f7f8c597d34f80e1340646db6291e3",
+      "snapshot": "meshes/wuji_right/r_index_finger_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_index_finger_proximal_abd.STL": {
+      "sha256": "e46323f153d125d32acb59f7dc263e031d42ebd7bf3319605b0ef06aed215f79",
+      "snapshot": "meshes/wuji_right/r_index_finger_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_index_finger_middle.STL": {
+      "sha256": "235cd0fa098c255765947bdf58439be436291397db6b16df4317c7905631499a",
+      "snapshot": "meshes/wuji_right/r_index_finger_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_index_finger_distal.STL": {
+      "sha256": "d261681b706eb18e03abe31e23b60119bf3c557b2d41ef68b81ba4a06b90b599",
+      "snapshot": "meshes/wuji_right/r_index_finger_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_middle_finger_proximal.STL": {
+      "sha256": "34301ac599063b747e443121e0f4789c9a64adc443cf92b46bf44d28e1183b5f",
+      "snapshot": "meshes/wuji_right/r_middle_finger_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_middle_finger_proximal_abd.STL": {
+      "sha256": "09d23730a84765ab682a4a4ab81c0354ff8865ad44ff1915e5aaf2786ed9bb78",
+      "snapshot": "meshes/wuji_right/r_middle_finger_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_middle_finger_middle.STL": {
+      "sha256": "6b27745ac8a79a9955f4b15b8b60ee7b5d7c1d82c2680f971fd4eaa10916bc0b",
+      "snapshot": "meshes/wuji_right/r_middle_finger_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_middle_finger_distal.STL": {
+      "sha256": "7b13dddc35bab7adfc95d92dc9ac8d2e3277439531f266d70b058898e80ddbde",
+      "snapshot": "meshes/wuji_right/r_middle_finger_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_ring_finger_proximal.STL": {
+      "sha256": "0699b1708eef484530db93f4f72bb081a84548a15757ff7745049da4abde118b",
+      "snapshot": "meshes/wuji_right/r_ring_finger_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_ring_finger_proximal_abd.STL": {
+      "sha256": "cad6307d92049ec24c3bf927541ad7609e1fcd37d9bb81a986a3f3eeb6b4b986",
+      "snapshot": "meshes/wuji_right/r_ring_finger_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_ring_finger_middle.STL": {
+      "sha256": "a81fd12129f3d77da945a294d383baed48db051848eceb7056e3ecf992803488",
+      "snapshot": "meshes/wuji_right/r_ring_finger_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_ring_finger_distal.STL": {
+      "sha256": "04166ff76fde19179fbfcb0384da486e24bc513c291a4a57caa9b7e4ea2b8993",
+      "snapshot": "meshes/wuji_right/r_ring_finger_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_pinky_proximal.STL": {
+      "sha256": "7fcf79881ff645e67ea31f0a125eb7a4d0947aec4475a2458e7535e803c115af",
+      "snapshot": "meshes/wuji_right/r_pinky_proximal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_pinky_proximal_abd.STL": {
+      "sha256": "1d185327b090a739246101ac2d4057c75b31b35bb1b94c6cc8b9107ab07001f8",
+      "snapshot": "meshes/wuji_right/r_pinky_proximal_abd.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_pinky_middle.STL": {
+      "sha256": "0a7e5cc29b71226e2b45a33ce52ac5904c6d0bda1dd6b339944ded13dd063837",
+      "snapshot": "meshes/wuji_right/r_pinky_middle.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_pinky_distal.STL": {
+      "sha256": "c279a44999f89cc9b4e5cf24b8e924ca620bb396366e133f0e3734c46c2052a1",
+      "snapshot": "meshes/wuji_right/r_pinky_distal.STL"
+    },
+    "/home/guest/pengyang/teleop/wuji_teleop/models/hand2_beta/meshes/right/r_wrist.STL": {
+      "sha256": "62e396842a4f3f23484fabe46397ed374918ea6f110f03a3cdea9495fdcd22a4",
+      "snapshot": "meshes/wuji_right/r_wrist.STL"
+    },
+    "/home/guest/pengyang/calibration/right_arm/handeye_result_current.json": {
+      "sha256": "8d4505b9ae3401d0c5bb028e90b0b6c12f6c08e23918c6d5752fb08fa0f18dae",
+      "snapshot": "calibration/right.json"
+    },
+    "/home/guest/pengyang/replay_robot/align_board_frames.py": {
+      "sha256": "4dcd35174f8636667f0c141fb47e80cd47417079316dc26848080923fa14cb61",
+      "snapshot": "tools/align_board_frames.py"
+    },
+    "/home/guest/pengyang/replay_robot/test_board_alignment.py": {
+      "sha256": "dff86199b2a935d8efec83eafabb6cb9d2823d1313da9ecc8e18bf55e6757ad6",
+      "snapshot": "tools/test_board_alignment.py"
+    }
+  }
+}

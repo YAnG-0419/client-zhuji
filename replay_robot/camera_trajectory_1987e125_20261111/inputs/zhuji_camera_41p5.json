@@ -1,0 +1,173 @@
+{
+  "schema": "tron2_head_propagated_extrinsic_v1",
+  "status": "kinematic_estimate_not_independently_validated",
+  "transform_convention": "T_a_b maps b to a; meters; base = SDK base, camera = original color optical frame",
+  "formula": "T_B_C1 = T_B_H1 @ inverse(T_B_H0) @ T_B_C0",
+  "old_head_pitch_yaw_rad": [
+    0.39840003848075867,
+    -0.025499645620584488
+  ],
+  "new_head_pitch_yaw_rad": [
+    0.7236999869346619,
+    -0.0006998220924288034
+  ],
+  "old_head_pitch_yaw_deg": [
+    22.826640762797062,
+    -1.461022073138744
+  ],
+  "new_head_pitch_yaw_deg": [
+    41.464954885028945,
+    -0.04009685230618464
+  ],
+  "T_base_camera": [
+    [
+      0.008563262217382203,
+      -0.6629328664188485,
+      0.7486298719406573,
+      0.16741063576420157
+    ],
+    [
+      -0.9999603083042605,
+      -0.0038351793228757996,
+      0.008041965904503541,
+      -0.01035256609019788
+    ],
+    [
+      -0.002460153703361284,
+      -0.7486690230143426,
+      -0.6629393951354116,
+      0.3655864372705466
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "T_camera_base": [
+    [
+      0.008563262217382446,
+      -0.999960308304261,
+      -0.0024601537033612157,
+      -0.010886337523772303
+    ],
+    [
+      -0.6629328664188489,
+      -0.0038351793228755915,
+      -0.7486690230143427,
+      0.38464554950739066
+    ],
+    [
+      0.7486298719406578,
+      0.008041965904503413,
+      -0.6629393951354118,
+      0.11711630376370953
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "T_head_camera": [
+    [
+      0.008570390387215122,
+      -0.0010337737580820216,
+      0.9999627391660287,
+      0.05272195729471396
+    ],
+    [
+      -0.9999540706789158,
+      -0.004299113411582748,
+      0.00856587161589552,
+      -0.0403579895951811
+    ],
+    [
+      0.004290098049739875,
+      -0.9999902244200646,
+      -0.0010705713578113966,
+      0.04583493193605659
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "T_base_head_old": [
+    [
+      0.9213832316212599,
+      0.025496882263143186,
+      0.3878180623462802,
+      0.09830832645219537
+    ],
+    [
+      -0.02350003959991091,
+      0.9996749016529621,
+      -0.009891367142271327,
+      0.02877990605416856
+    ],
+    [
+      -0.387944182358708,
+      0.0,
+      0.9216828691985295,
+      0.36615
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "T_base_head_new": [
+    [
+      0.7493606904681585,
+      0.0006998220353057144,
+      0.6621616614016578,
+      0.09758098217241017
+    ],
+    [
+      -0.0005244192519989333,
+      0.9999997551245294,
+      -0.00046339543505769665,
+      0.03005430172993529
+    ],
+    [
+      -0.6621618235488459,
+      0.0,
+      0.7493608739682551,
+      0.36615
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "source_validation_passed": false,
+  "validation_passed": false,
+  "motion_commands_sent": 0,
+  "assumptions": [
+    "Camera remains rigidly fixed to the same head mount",
+    "Official head axes/pivots and encoder zeros match hardware",
+    "SDK base equals URDF base_Link; numerically checked at a stationary arm pose",
+    "Original calibration optical-frame convention is unchanged"
+  ],
+  "limits": [
+    "Propagation does not improve the original calibration accuracy",
+    "Use independent target-board observations at new head pose to validate",
+    "Do not treat this file as a new measured hand-eye calibration"
+  ],
+  "sources": {
+    "calibration/source/handeye_result_provisional_20261023.json": "15afa40afb6fa7951989d4f5c26b161288ef3c6f32a95e53f1e551f027f1f208",
+    "calibration/source/camera_aligned_joint_state_20261023_120427.json": "aeefc60b6d64f3e08b85cf088691516be82b2c95ea5d87c98bac47e4f6905ef1",
+    "calibration/source/head_down_41p5_joint_state_20261030_114241.json": "78da575697b553585df712a75d3f5f605d5525a15a351ff1bf75e6e5c61d1e0a",
+    "calibration/source/robot.urdf": "17854fde22b27af58148f11fd449694888a63c702c1c46f4097fa1a059d79357",
+    "calibration/base_model_check.json": "331baab83795fad715cedc4a3b59d6fb195fd94db2c6fc8719a638dcb4f8fb88"
+  }
+}

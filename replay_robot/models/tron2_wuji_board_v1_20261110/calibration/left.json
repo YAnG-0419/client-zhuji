@@ -1,0 +1,211 @@
+{
+  "schema": "tron2_eye_to_hand_result_v1",
+  "created_at": "2026-10-23T17:34:18.412466+08:00",
+  "method": "Tsai1989",
+  "sample_counts": {
+    "training": 11,
+    "holdout": 4
+  },
+  "transform_convention": "T_a_b maps coordinates from b into a; translation in meters",
+  "base_frame_semantics": "SDK robot base; not automatically equated with ROS base_link",
+  "eef_frame_semantics": "SDK measured left-arm end-effector",
+  "camera_frame_semantics": "CameraInfo optical frame; head fixed to saved joint angles",
+  "T_base_camera": [
+    [
+      -0.015935319704497353,
+      -0.3888763869942893,
+      0.9211521162241245,
+      0.1636320654239266
+    ],
+    [
+      -0.9998728267117969,
+      0.005617848395754521,
+      -0.014925487689292694,
+      -0.013257301449236522
+    ],
+    [
+      0.0006292767883641637,
+      -0.9212728126986436,
+      -0.38891645451568846,
+      0.3879420949612954
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "T_eef_board": [
+    [
+      -0.02590094258816275,
+      -0.9996081244360443,
+      0.01061784980578053,
+      0.08362789165217774
+    ],
+    [
+      -0.999372116085139,
+      0.025635028718964992,
+      -0.024458513734241377,
+      0.13858724286274848
+    ],
+    [
+      0.02417674015567469,
+      -0.011244681588699984,
+      -0.9996444579806426,
+      0.06974535212733113
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "training": {
+    "samples": [
+      {
+        "sample_id": "20261023_171948_080813",
+        "position_error_mm": 1.9115655292641363,
+        "rotation_error_deg": 0.25918392466214774,
+        "predicted_reprojection_rms_px": 3.0882121396248254
+      },
+      {
+        "sample_id": "20261023_172020_925153",
+        "position_error_mm": 1.3178606808378686,
+        "rotation_error_deg": 0.16154274423412232,
+        "predicted_reprojection_rms_px": 1.1760796905326993
+      },
+      {
+        "sample_id": "20261023_172134_207618",
+        "position_error_mm": 0.21773652730242737,
+        "rotation_error_deg": 0.24638518378164576,
+        "predicted_reprojection_rms_px": 0.8160129007324184
+      },
+      {
+        "sample_id": "20261023_172225_612402",
+        "position_error_mm": 1.0130657273360633,
+        "rotation_error_deg": 0.2985977707676792,
+        "predicted_reprojection_rms_px": 2.0175419347109353
+      },
+      {
+        "sample_id": "20261023_172356_774864",
+        "position_error_mm": 0.6875240205922452,
+        "rotation_error_deg": 0.16984159943762842,
+        "predicted_reprojection_rms_px": 0.82692903582459
+      },
+      {
+        "sample_id": "20261023_172417_086405",
+        "position_error_mm": 0.5162647561753652,
+        "rotation_error_deg": 0.26683168843342453,
+        "predicted_reprojection_rms_px": 0.9692241625676565
+      },
+      {
+        "sample_id": "20261023_172440_238814",
+        "position_error_mm": 0.42919131609732364,
+        "rotation_error_deg": 0.4522359059806241,
+        "predicted_reprojection_rms_px": 1.3702248442325053
+      },
+      {
+        "sample_id": "20261023_172513_013542",
+        "position_error_mm": 0.5170135415150867,
+        "rotation_error_deg": 0.08815532275545314,
+        "predicted_reprojection_rms_px": 0.7677590254888772
+      },
+      {
+        "sample_id": "20261023_172526_920659",
+        "position_error_mm": 0.68379731299027,
+        "rotation_error_deg": 0.05028121748331641,
+        "predicted_reprojection_rms_px": 1.1114869233155809
+      },
+      {
+        "sample_id": "20261023_172541_625840",
+        "position_error_mm": 0.46613845335764054,
+        "rotation_error_deg": 0.049969758896422106,
+        "predicted_reprojection_rms_px": 0.7020992765219599
+      },
+      {
+        "sample_id": "20261023_172610_536072",
+        "position_error_mm": 0.6956929924758053,
+        "rotation_error_deg": 0.2272237669864098,
+        "predicted_reprojection_rms_px": 1.4022681902706176
+      }
+    ],
+    "max_position_error_mm": 1.9115655292641363,
+    "max_rotation_error_deg": 0.4522359059806241,
+    "max_predicted_reprojection_rms_px": 3.0882121396248254
+  },
+  "holdout": {
+    "samples": [
+      {
+        "sample_id": "20261023_172058_441410",
+        "position_error_mm": 0.6716343584698946,
+        "rotation_error_deg": 0.11620559938972348,
+        "predicted_reprojection_rms_px": 0.4868254105571149
+      },
+      {
+        "sample_id": "20261023_172339_450051",
+        "position_error_mm": 0.34437229354693705,
+        "rotation_error_deg": 0.19056906028124418,
+        "predicted_reprojection_rms_px": 0.44052180622414294
+      },
+      {
+        "sample_id": "20261023_172457_240021",
+        "position_error_mm": 0.5483618899608274,
+        "rotation_error_deg": 0.2036498232012672,
+        "predicted_reprojection_rms_px": 0.9392640387575355
+      },
+      {
+        "sample_id": "20261023_172555_882104",
+        "position_error_mm": 0.5202337213555961,
+        "rotation_error_deg": 0.06274024357280905,
+        "predicted_reprojection_rms_px": 1.0607348778879906
+      }
+    ],
+    "max_position_error_mm": 0.6716343584698946,
+    "max_rotation_error_deg": 0.2036498232012672,
+    "max_predicted_reprojection_rms_px": 1.0607348778879906
+  },
+  "rotation_diversity_singular_values_rad": [
+    2.6329494185806293,
+    0.3318471505246021,
+    0.21539768330228484
+  ],
+  "validation_passed": false,
+  "thresholds": {
+    "position_mm": 5,
+    "rotation_deg": 1,
+    "predicted_reprojection_px": 3
+  },
+  "selection": {
+    "selection_policy": "Fixed before fitting, from capture order and robot pose spread; no calibration residuals used",
+    "original_split_labels": "All 15 samples were marked train in the copied session; source files were not edited",
+    "training_sample_ids": [
+      "20261023_171948_080813",
+      "20261023_172020_925153",
+      "20261023_172134_207618",
+      "20261023_172225_612402",
+      "20261023_172356_774864",
+      "20261023_172417_086405",
+      "20261023_172440_238814",
+      "20261023_172513_013542",
+      "20261023_172526_920659",
+      "20261023_172541_625840",
+      "20261023_172610_536072"
+    ],
+    "holdout_sample_ids": [
+      "20261023_172058_441410",
+      "20261023_172339_450051",
+      "20261023_172457_240021",
+      "20261023_172555_882104"
+    ],
+    "holdout_indices_zero_based": [
+      2,
+      5,
+      9,
+      13
+    ],
+    "source_archive_sha256": "dc773c2bc35b10e828094c5e930790ad9f8c1d65d806912e239152e29c85e7a1"
+  },
+  "note": "11/4 requested by user; below standard 12/5 sample-count gate. Consistency checks do not establish absolute accuracy. No TF published."
+}

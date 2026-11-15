@@ -1,0 +1,12 @@
+{
+  "model": "wuji2",
+  "source": "/home/descfly/Xflow/traj_21keypoints/replay_test/inroom/flower_20261112_225556/keypoints21_camera.npz",
+  "frames": 322,
+  "target_fps": 29.969730572122156,
+  "duplicate_source_frames": 0,
+  "legacy_timestamp_adapter": true,
+  "source_sha256": "0527016807ee04d5e6baf665105fdaded699c151b5ccfea017f63f8968188b38",
+  "frame": "undistorted_color_optical",
+  "free_root": true,
+  "arm_ik": false
+}

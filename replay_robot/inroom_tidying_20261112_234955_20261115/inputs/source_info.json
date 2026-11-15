@@ -1,0 +1,12 @@
+{
+  "model": "wuji2",
+  "source": "/home/descfly/Xflow/traj_21keypoints/replay_test/inroom/tidying_20261112_234955/keypoints21_camera.npz",
+  "frames": 241,
+  "target_fps": 29.969730572122156,
+  "duplicate_source_frames": 0,
+  "legacy_timestamp_adapter": true,
+  "source_sha256": "2fce4dd741771d7e8229a46c4d4e119ce67a4c645df48d40750b493f9cc49546",
+  "frame": "undistorted_color_optical",
+  "free_root": true,
+  "arm_ik": false
+}

@@ -1,0 +1,198 @@
+{
+  "source": "/home/descfly/Documents/Codex/2026-11-10/new-chat/outputs/replay_test_conversion_staging_20261115/episodes/inroom/whiteboard_20261113_103641",
+  "source_handpose_sha256": "eeef97c41aa3b93592c4c6f453398d172c4dab70f6698a6920ac63f5b994bc34",
+  "target_model": "Wuji Hand 2 early Beta v2026.6.27",
+  "frames": 602,
+  "duration_s": 20.057178,
+  "nominal_fps": 29.969730572122156,
+  "time_basis": "target_timestamps_ns, uniform 30 Hz; original source timestamps and duplicate flags preserved",
+  "duplicate_frames": 0,
+  "source_frame": "undistorted color optical; +X image right, +Y image down, +Z forward; metres",
+  "method": "Human bone directions with Wuji neutral segment lengths -> bounded 21-point geometric IK with free root and temporal joint prior",
+  "human_length_scaling": "Per bone, Wuji neutral segment length; wrist position unchanged in normalized goals",
+  "main_output_orientation": "Direct geometric fit in this camera optical frame. No Sharpa-to-Wuji mounting correction applied.",
+  "optional_mount_reference": {
+    "left_local_z_deg": 90,
+    "right_local_z_deg": -90,
+    "composition": "R_reference=R_fit @ Rz(angle); t_reference=t_fit",
+    "scope": "Previously visually confirmed on Sharpa workcell; not calibrated to this different camera. Stored separately, not the main output."
+  },
+  "root_pose_scope": "Camera optical frame, not FR3 base or flange; no hand-eye transform for this camera",
+  "solver_source": "Human points only; no Sharpa joint data or Sharpa source model used as IK target",
+  "sides": {
+    "left": {
+      "normalized_tip_fit_mm": {
+        "mean": 0.1363392454506255,
+        "rmse": 0.1862491830649526,
+        "p95": 0.3287828794585324,
+        "max": 0.914220417422675
+      },
+      "raw_human_tip_distance_before_orientation_correction_mm": {
+        "mean": 10.229953718583351,
+        "rmse": 12.638724572341555,
+        "p95": 24.859635370806828,
+        "max": 25.413491552358188
+      },
+      "raw_human_tip_distance_after_orientation_correction_mm": {
+        "mean": 68.48873207169855,
+        "rmse": 76.31447028206256,
+        "p95": 125.61867281363696,
+        "max": 128.51399682882987
+      },
+      "wrist_fit_mm": {
+        "mean": 0.7145160750041941,
+        "rmse": 0.7643058901918829,
+        "p95": 1.3484015001214755,
+        "max": 1.5760762181507737
+      },
+      "joint_step_deg": {
+        "mean": 0.15156674944155557,
+        "rmse": 0.4159864094716524,
+        "p95": 0.5036908561929794,
+        "max": 6.590774309053994
+      },
+      "root_step_mm": {
+        "mean": 2.9822331011207868,
+        "rmse": 9.73948719756953,
+        "p95": 9.046310667159103,
+        "max": 64.35790950524095
+      },
+      "solver_budget_exhausted_frames": 0,
+      "max_nfev": 16,
+      "joint_limit_violation_max_rad": 0.0,
+      "human_segment_lengths_mean_m": [
+        0.0,
+        0.03862256871690273,
+        0.030865086260275277,
+        0.027154130424608083,
+        0.03568453634477584,
+        0.09072748543132281,
+        0.03305843018082182,
+        0.022254940587956552,
+        0.0256481227261959,
+        0.09482817093009341,
+        0.031789565720937336,
+        0.023334038648268534,
+        0.026223344536521837,
+        0.08616054277093543,
+        0.028879665768369627,
+        0.024861111327547213,
+        0.025646331752149216,
+        0.08196760474700304,
+        0.021184065894185977,
+        0.01901944733645206,
+        0.019436151945915518
+      ],
+      "wuji_neutral_segment_lengths_m": [
+        0.0,
+        0.036461648895891575,
+        0.03349603703385703,
+        0.036000000000000025,
+        0.029787000000000022,
+        0.08799032658206087,
+        0.037599999999999974,
+        0.02949999999999998,
+        0.024750000000000008,
+        0.08893218890537759,
+        0.03760000000000001,
+        0.029500000000000005,
+        0.024749999999999998,
+        0.08296746689094547,
+        0.03759999999999997,
+        0.029499999999999985,
+        0.02474999999999999,
+        0.08060230912868085,
+        0.03360014880919429,
+        0.02750000000000001,
+        0.024755000000000003
+      ]
+    },
+    "right": {
+      "normalized_tip_fit_mm": {
+        "mean": 0.12195038138587518,
+        "rmse": 0.14056621179004303,
+        "p95": 0.285258568402842,
+        "max": 0.35746828375755757
+      },
+      "raw_human_tip_distance_before_orientation_correction_mm": {
+        "mean": 10.348809537003655,
+        "rmse": 12.778954426523972,
+        "p95": 24.71119443500399,
+        "max": 25.422401267415317
+      },
+      "raw_human_tip_distance_after_orientation_correction_mm": {
+        "mean": 77.11930610166247,
+        "rmse": 84.08855199807128,
+        "p95": 142.37354224259636,
+        "max": 146.30927540277762
+      },
+      "wrist_fit_mm": {
+        "mean": 1.4181469361324623,
+        "rmse": 1.8124251842770838,
+        "p95": 3.092847945651628,
+        "max": 3.8880687459543934
+      },
+      "joint_step_deg": {
+        "mean": 0.28624122224449094,
+        "rmse": 0.5220025280732999,
+        "p95": 1.019701386339236,
+        "max": 5.3383678443793805
+      },
+      "root_step_mm": {
+        "mean": 3.6623991523258494,
+        "rmse": 5.195608263338737,
+        "p95": 10.771967463602863,
+        "max": 21.34202697073818
+      },
+      "solver_budget_exhausted_frames": 0,
+      "max_nfev": 16,
+      "joint_limit_violation_max_rad": 0.0,
+      "human_segment_lengths_mean_m": [
+        0.0,
+        0.03842181482912733,
+        0.03078895506154676,
+        0.027128025349283054,
+        0.03564182669111088,
+        0.09025678470424332,
+        0.032998822146520244,
+        0.022237949726785358,
+        0.0255292131297588,
+        0.09446252863461337,
+        0.03175736864037,
+        0.023324741548768083,
+        0.026106735529182374,
+        0.08586031272908641,
+        0.02880694845363845,
+        0.024891182136775856,
+        0.02559967643084022,
+        0.0817392372238909,
+        0.021155282694189193,
+        0.018995164248157545,
+        0.019750135275856538
+      ],
+      "wuji_neutral_segment_lengths_m": [
+        0.0,
+        0.03701614377696208,
+        0.032500002798739,
+        0.03500003571426749,
+        0.029779999999999994,
+        0.08799048128248438,
+        0.037600000000000106,
+        0.029499999999999988,
+        0.02474999999999999,
+        0.08893236131625491,
+        0.03760000000000021,
+        0.029499999999999988,
+        0.02474999999999999,
+        0.08296764513402569,
+        0.0376000000000001,
+        0.0295,
+        0.02475000000000001,
+        0.08060010778707322,
+        0.03360014880929932,
+        0.0275,
+        0.024755
+      ]
+    }
+  }
+}

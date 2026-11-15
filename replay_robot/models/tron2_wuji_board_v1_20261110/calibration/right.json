@@ -1,0 +1,248 @@
+{
+  "schema": "tron2_eye_to_hand_result_v1",
+  "method": "Tsai1989",
+  "transform_convention": "T_a_b maps coordinates from b into a; translation in meters",
+  "T_base_camera": [
+    [
+      -0.015375026518350099,
+      -0.39568867049015494,
+      0.9182560016712625,
+      0.16296228154294096
+    ],
+    [
+      -0.9995788856172324,
+      0.028686370426787455,
+      -0.004375337695448501,
+      -0.018334827457304276
+    ],
+    [
+      -0.024610160254905082,
+      -0.9179365817949903,
+      -0.3959630940059402,
+      0.3881052862178294
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "T_eef_board": [
+    [
+      -0.9997037179644264,
+      -0.02275891205402541,
+      0.008631813842967982,
+      0.13902302366515762
+    ],
+    [
+      -0.022621045977565164,
+      0.9996200936999531,
+      0.015746636154322848,
+      -0.08596768898988598
+    ],
+    [
+      -0.008986910869891417,
+      0.015546710051098015,
+      -0.9998387546197653,
+      0.06880300299135104
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "training": {
+    "samples": [
+      {
+        "sample_id": "20261024_135938_094402",
+        "position_error_mm": 5.168604876884983,
+        "rotation_error_deg": 0.6040155263638379,
+        "predicted_reprojection_rms_px": 5.20180226855847
+      },
+      {
+        "sample_id": "20261024_140323_087831",
+        "position_error_mm": 4.330453418900868,
+        "rotation_error_deg": 0.66107518045683,
+        "predicted_reprojection_rms_px": 3.345403147203818
+      },
+      {
+        "sample_id": "20261024_140459_142567",
+        "position_error_mm": 3.0793022281474585,
+        "rotation_error_deg": 0.3942264707678863,
+        "predicted_reprojection_rms_px": 1.8888054985199452
+      },
+      {
+        "sample_id": "20261024_140524_634277",
+        "position_error_mm": 1.51374215002494,
+        "rotation_error_deg": 0.28746217492425485,
+        "predicted_reprojection_rms_px": 1.64605528213063
+      },
+      {
+        "sample_id": "20261024_140538_114513",
+        "position_error_mm": 2.36746552273351,
+        "rotation_error_deg": 0.3869327482992548,
+        "predicted_reprojection_rms_px": 1.9303762176690313
+      },
+      {
+        "sample_id": "20261024_140552_167048",
+        "position_error_mm": 0.41674230439784843,
+        "rotation_error_deg": 0.41176369588307266,
+        "predicted_reprojection_rms_px": 0.8098771470277853
+      },
+      {
+        "sample_id": "20261024_140610_155526",
+        "position_error_mm": 3.494650670142343,
+        "rotation_error_deg": 0.8037415309257006,
+        "predicted_reprojection_rms_px": 3.8898578524311915
+      },
+      {
+        "sample_id": "20261024_140637_501177",
+        "position_error_mm": 1.0457859283744353,
+        "rotation_error_deg": 0.497275679809565,
+        "predicted_reprojection_rms_px": 0.7371383927772164
+      },
+      {
+        "sample_id": "20261024_140701_373288",
+        "position_error_mm": 3.3231241563621854,
+        "rotation_error_deg": 0.3579045048966662,
+        "predicted_reprojection_rms_px": 2.162124538957759
+      },
+      {
+        "sample_id": "20261024_140713_122113",
+        "position_error_mm": 4.07700519196344,
+        "rotation_error_deg": 0.42126222446184947,
+        "predicted_reprojection_rms_px": 5.144043556947898
+      },
+      {
+        "sample_id": "20261024_140847_886182",
+        "position_error_mm": 2.1088961986963666,
+        "rotation_error_deg": 0.3023088279843238,
+        "predicted_reprojection_rms_px": 2.4961032090131487
+      },
+      {
+        "sample_id": "20261024_140903_068084",
+        "position_error_mm": 2.626431433637071,
+        "rotation_error_deg": 0.35266166028128426,
+        "predicted_reprojection_rms_px": 3.6964878938613377
+      }
+    ],
+    "max_position_error_mm": 5.168604876884983,
+    "max_rotation_error_deg": 0.8037415309257006,
+    "max_predicted_reprojection_rms_px": 5.20180226855847
+  },
+  "holdout": {
+    "samples": [
+      {
+        "sample_id": "20261024_141007_731272",
+        "position_error_mm": 2.8138227745761033,
+        "rotation_error_deg": 0.5545531512893839,
+        "predicted_reprojection_rms_px": 2.1074466765755844
+      },
+      {
+        "sample_id": "20261024_141021_529179",
+        "position_error_mm": 2.832827900495103,
+        "rotation_error_deg": 0.3944928136081275,
+        "predicted_reprojection_rms_px": 2.7082410566133834
+      },
+      {
+        "sample_id": "20261024_141038_027177",
+        "position_error_mm": 3.1663733034737054,
+        "rotation_error_deg": 0.27971147159125254,
+        "predicted_reprojection_rms_px": 3.2690558427787355
+      },
+      {
+        "sample_id": "20261024_141049_967630",
+        "position_error_mm": 2.2989890912167485,
+        "rotation_error_deg": 0.19076794675125264,
+        "predicted_reprojection_rms_px": 3.0442207904139043
+      },
+      {
+        "sample_id": "20261024_141106_271847",
+        "position_error_mm": 3.496953865739434,
+        "rotation_error_deg": 0.3676503993310436,
+        "predicted_reprojection_rms_px": 3.0877819245209657
+      }
+    ],
+    "max_position_error_mm": 3.496953865739434,
+    "max_rotation_error_deg": 0.5545531512893839,
+    "max_predicted_reprojection_rms_px": 3.2690558427787355
+  },
+  "rotation_diversity_singular_values_rad": [
+    1.873406997616934,
+    0.5367936140552014,
+    0.2801015074653165
+  ],
+  "validation_passed": false,
+  "thresholds": {
+    "position_mm": 5,
+    "rotation_deg": 1,
+    "predicted_reprojection_px": 3
+  },
+  "note": "Default consistency checks are not an absolute accuracy guarantee; no TF is published.",
+  "created_at": "2026-10-24T14:11:10.760269+08:00",
+  "arm": "right",
+  "session": "/home/guest/wanchi/traj/tron2_handeye/session_right_20261024_135616",
+  "session_manifest": {
+    "schema": "tron2_handeye_session_v1",
+    "created_at": "2026-10-24T13:56:18.481362+08:00",
+    "settings_fingerprint": "6b39be4b108200c13d6835b15af732fb223c239da9e06cf4c5b1d964fb8569b9",
+    "board": {
+      "squares_x": 14,
+      "squares_y": 9,
+      "longest_board_side_m": 0.28,
+      "marker_length_m": 0.015,
+      "dictionary": "DICT_5X5_250",
+      "border_bits": 1,
+      "square_length_m": 0.02,
+      "preset_sha256": "f02a5905787335a4055aa9a08ba3425ecc9293f457c9ee0d6c5565b8e1d8bd99"
+    },
+    "arm": "right",
+    "expected_accid": "DACH_TRON2A_447",
+    "head_reference_rad": [
+      0.39840003848075867,
+      -0.025499645620584488
+    ],
+    "head_reference_file": "/home/guest/wanchi/traj/robot_camera_aligned_state_20261023_120427_285973.json",
+    "head_reference_sha256": "aeefc60b6d64f3e08b85cf088691516be82b2c95ea5d87c98bac47e4f6905ef1",
+    "head_tolerance_deg": 0.3,
+    "wrist_tolerance_deg": 0.5,
+    "keep_wrist_fixed": false,
+    "base_frame_semantics": "SDK robot base; not automatically equated with ROS base_link",
+    "eef_frame_semantics": "SDK measured right-arm end-effector",
+    "camera_frame_semantics": "CameraInfo optical frame; head fixed to saved joint angles",
+    "motion_commands_sent": 0
+  },
+  "camera": {
+    "width": 640,
+    "height": 480,
+    "frame_id": "top_color_optical_frame",
+    "k": [
+      387.36358642578125,
+      0.0,
+      326.43572998046875,
+      0.0,
+      386.4456787109375,
+      242.3768768310547,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "d": [
+      -0.05416286736726761,
+      0.056861527264118195,
+      0.0009839670965448022,
+      0.0003474352415651083,
+      -0.01834084279835224
+    ],
+    "distortion_model": "plumb_bob"
+  },
+  "motion_commands_sent": 0,
+  "sources": {
+    "board_preset": "src/fr3_handeye_calibration/rviz/handeye_eye_to_hand.rviz",
+    "detector": "src/moveit_calibration/moveit_calibration_plugins/handeye_calibration_target/src/handeye_target_charuco.cpp",
+    "solver": "src/moveit_calibration/moveit_calibration_plugins/handeye_calibration_solver/src/handeye_solver_opencv.cpp"
+  }
+}

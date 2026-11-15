@@ -1,0 +1,1152 @@
+{
+  "completed": true,
+  "execute_requested": false,
+  "arm_motion_commands_sent": 0,
+  "hand_target_updates": 0,
+  "requested_speed": 1.0,
+  "source": {
+    "schema": "replay_hand_cross_v1",
+    "frame": "tron2_base_link",
+    "placement_policy": "preserve_common_frame_v1",
+    "execution_ready": false,
+    "motion_commands_sent": 0,
+    "source_stream": "final_handpose.npz:joints_camera_m",
+    "source_camera_id": "orbbec_gemini_335",
+    "source_frame": "undistorted_color_optical",
+    "alignment_version": "human_camera_direct_fit_v1",
+    "source_files": {
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/wuji2_camera_replay_trajectory.npz": "1987e1256ca75012db0ad587f850dad2aeece4f044ca271b906bbe1248a288a9",
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/source_observation.json": "7f1093a005f55020edaa4341fba2dfd0b598ad7adb17b02df42fb58315a4e73c",
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/zhuji_observation.json": "e729a0f1bd564e5b333e9b932eec61be73a9e26e882792230932b5f2f622648e",
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/zhuji_camera_41p5.json": "7657d89f5ba26840a4fd399f2a95490437fecc4122b686884c5156f11ee0864f",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/alignment_config.json": "f2ff95e41fcf2c91dae9d867966c15b42221b6ea098304215b56c4efd2d6b177",
+      "/home/guest/pengyang/teleop/wuji_control/config/joint_limits.json": "4b8276883107432483d42247bd85382ad0e9db70c6eb5f869e053ad4c124611e",
+      "replay_robot/camera_trajectory_1987e125_20261111/convert_camera_trajectory.py": "c20927a93ba4a9be5cf3c379ddaf6fb69c0630ceea8d35c396716226a22f8fe4",
+      "/home/guest/pengyang/replay_hand/build_board_aligned395.py": "ea68ab230400fbd7e11dcd8d07e8990f95c52e2de3b5f988904c641d469132ae",
+      "/home/guest/pengyang/replay_hand/build_exported_trajectory.py": "1316edf290290ca1ebf03fe20500863e8e186c50a6e63e287a39cacff20e6660",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/calibration/left.json": "15afa40afb6fa7951989d4f5c26b161288ef3c6f32a95e53f1e551f027f1f208",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/calibration/right.json": "8d4505b9ae3401d0c5bb028e90b0b6c12f6c08e23918c6d5752fb08fa0f18dae"
+    },
+    "target_head_pitch_yaw_rad": [
+      0.7236999869346619,
+      -0.0006998220924288034
+    ],
+    "controlled_hand_origin": "B = Wuji base_link origin = confirmed board center",
+    "task_placement": {
+      "method": "Corresponding observed task-board frames; no additional task repositioning",
+      "target_camera_T_source_camera": [
+        [
+          0.9997230369737449,
+          -0.003883597079908672,
+          0.02321135536138286,
+          -0.012854603533171388
+        ],
+        [
+          0.004326896798593022,
+          0.9998086205597289,
+          -0.019078789755828315,
+          0.02920273681840277
+        ],
+        [
+          -0.023132818853002265,
+          0.0191739387756846,
+          0.9995485144622744,
+          -0.05507571979636949
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_tron_base_source_camera": [
+        [
+          -0.01162547080257546,
+          -0.6484850676278391,
+          0.761138598083381,
+          0.10670977533895191
+        ],
+        [
+          -0.9998859840367627,
+          0.0002031937468404475,
+          -0.015098928410148335,
+          0.0019466124287755016
+        ],
+        [
+          0.009636771007553295,
+          -0.761227348284347,
+          -0.6484134922011797,
+          0.380266741496308
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "board_fingerprint": "437d28755b5102513fd2204b356c468f7d9618172b30ba59d7d60f049d63d928",
+      "physical_validation_complete": false
+    },
+    "per_arm_reanchoring_allowed": false,
+    "additional_rigid_task_placement_applied": false,
+    "hand_retargeting_applied": false,
+    "local_z_correction_applied": false,
+    "wrist_offset_added": false,
+    "adapter_length_added": false,
+    "bimanual_relative_matrix_error_max": 4.440892098500626e-16,
+    "assumptions": [
+      "User-supplied Orbbec observation corresponds to this trajectory camera and unchanged mounting.",
+      "Undistorted color optical coordinates use the original optical axes; no extra rectification rotation.",
+      "Corresponding board placements define task origins and axes.",
+      "Existing 41.5-degree target camera-to-base estimate remains applicable; not independently physically validated."
+    ],
+    "timestamp_semantics": "Source device clock preserved; not asserted to be Unix epoch",
+    "time_preprocessing": "Position linear / orientation Slerp / finger linear interpolation at original times; no duration scaling.",
+    "original_sample_max_gap_s": 0.1002400000000001,
+    "original_frames": 150,
+    "sides": {
+      "left": {
+        "T_sdk_eef_board_center": [
+          [
+            -0.02590094258816275,
+            -0.9996081244360443,
+            0.01061784980578053,
+            -0.00996297150940903
+          ],
+          [
+            -0.999372116085139,
+            0.025635028718964992,
+            -0.024458513734241377,
+            0.0009822991955358573
+          ],
+          [
+            0.02417674015567469,
+            -0.011244681588699984,
+            -0.9996444579806426,
+            0.07211807440614258
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "T_board_center_hand": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "target_xyz_min_m": [
+          0.4619854637113336,
+          0.05950049620040095,
+          -0.1760157364439298
+        ],
+        "target_xyz_max_m": [
+          0.5791463675015731,
+          0.2985476290238714,
+          0.03016752133059364
+        ],
+        "hand_speed_peak_rad_s": 0.7928775679934963,
+        "hand_limit_min_margin_rad": 0.39270716860945143
+      },
+      "right": {
+        "T_sdk_eef_board_center": [
+          [
+            -0.9997037179644264,
+            -0.02275891205402541,
+            0.008631813842967982,
+            -0.002983798934724363
+          ],
+          [
+            -0.022621045977565164,
+            0.9996200936999531,
+            0.015746636154322848,
+            0.0008311730062506711
+          ],
+          [
+            -0.008986910869891417,
+            0.015546710051098015,
+            -0.9998387546197653,
+            0.06894403937416507
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "T_board_center_hand": [
+          [
+            0.0,
+            -1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "target_xyz_min_m": [
+          0.3992955161587053,
+          -0.3732529371035434,
+          -0.18022419548935112
+        ],
+        "target_xyz_max_m": [
+          0.5526722999539477,
+          -0.10922377812571224,
+          0.03804268799010724
+        ],
+        "hand_speed_peak_rad_s": 0.665576048313542,
+        "hand_limit_min_margin_rad": 0.2884244751784002
+      }
+    },
+    "episode": "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/replay_input_50hz.npz",
+    "episode_sha256": "6017b0bbee60b48f276f34ab1fbf8fa9ba9e37725751af5d2743dc5774216369",
+    "source_duration_s": 14.91072,
+    "resampling": "Cartesian Slerp and hand linear interpolation at 50 Hz",
+    "arm_source": "Franka/Sharpa root mapped through assumed common camera frame to Tron2 SDK EEF",
+    "hand_source": "Sharpa 21 keypoints retargeted directly to deployed Wuji Hand 2 q20",
+    "joint_state_use": "No recorded Tron2 joints; replay_hand generates a multi-start first-frame and previous-solution continuous IK seed path",
+    "fk": {
+      "frame_id": "base_link",
+      "quaternion_order": "xyzw",
+      "implementation": "pengyang replay Model/FK",
+      "urdf_sha256": "17854fde22b27af58148f11fd449694888a63c702c1c46f4097fa1a059d79357",
+      "sdk_eef_offset_from_wrist_roll_m": [
+        -0.0338,
+        0.0,
+        -0.2125
+      ]
+    },
+    "cross_anchor": {
+      "policy": "preserve_common_frame_v1",
+      "absolute_camera_pose_preserved": true,
+      "bimanual_relative_pose_preserved": true,
+      "per_arm_reanchoring_applied": false
+    },
+    "cross_seed": {
+      "selected_first_seed": "joint_midpoint",
+      "first_frame_attempts": [
+        {
+          "name": "saved_home",
+          "position_error_m": 5.923925639721205e-07,
+          "rotation_error_rad": 1.8746028065718102e-06,
+          "per_arm_position_error_m": [
+            1.1282983142904877e-09,
+            5.923925639721205e-07
+          ],
+          "per_arm_rotation_error_rad": [
+            2.1842832493736514e-09,
+            1.8746028065718102e-06
+          ],
+          "target_eef_xyz_xyzw": [
+            [
+              0.4619854637113336,
+              0.29447741991691107,
+              -0.0309148302774214,
+              -0.3628196056891231,
+              0.5810777021323856,
+              0.6532174460988853,
+              -0.3225176056034548
+            ],
+            [
+              0.4200032714057503,
+              -0.32203575045156585,
+              0.009815616182685585,
+              -0.3966142527442515,
+              -0.5333862383156827,
+              0.6103939655873826,
+              0.43083112941159896
+            ]
+          ],
+          "nearest_eef_xyz_xyzw": [
+            [
+              0.4619854628344098,
+              0.2944774206070661,
+              -0.030914830443997898,
+              -0.3628196050173588,
+              0.5810777028411225,
+              0.6532174460828881,
+              -0.32251760511463756
+            ],
+            [
+              0.42000326952224637,
+              -0.3220358877342752,
+              0.009816192445524896,
+              -0.3966144557029612,
+              -0.5333868885052016,
+              0.6103933277570125,
+              0.43083104127709254
+            ]
+          ],
+          "solved_q16": [
+            -0.6334620700772181,
+            1.2120575142522376,
+            -0.5793600554803634,
+            -1.849212973267178,
+            -0.3467252251398974,
+            -0.16370336835724555,
+            -0.21068092681057787,
+            -1.1607785143073555,
+            -1.4489931522399482,
+            1.1206756635749953,
+            -2.126532012568092,
+            0.11276132821955274,
+            0.2594316062813771,
+            0.21611036179956122,
+            0.7233999967575073,
+            0.0037000179290771484
+          ],
+          "clearance_score_m": 0.020176637637860206,
+          "closest_bodies": [
+            "base_Link",
+            "proximal_roll_L_Link"
+          ],
+          "max_joint_change_rad": 1.697425365139287,
+          "minimum_joint_margin_rad": 0.3238000032424926
+        },
+        {
+          "name": "test_ik_ready",
+          "position_error_m": 3.870953324307941e-06,
+          "rotation_error_rad": 1.2449072648770955e-05,
+          "per_arm_position_error_m": [
+            1.9306366665972955e-06,
+            3.870953324307941e-06
+          ],
+          "per_arm_rotation_error_rad": [
+            5.828199065213527e-06,
+            1.2449072648770955e-05
+          ],
+          "target_eef_xyz_xyzw": [
+            [
+              0.4619854637113336,
+              0.29447741991691107,
+              -0.0309148302774214,
+              -0.3628196056891231,
+              0.5810777021323856,
+              0.6532174460988853,
+              -0.3225176056034548
+            ],
+            [
+              0.4200032714057503,
+              -0.32203575045156585,
+              0.009815616182685585,
+              -0.3966142527442515,
+              -0.5333862383156827,
+              0.6103939655873826,
+              0.43083112941159896
+            ]
+          ],
+          "nearest_eef_xyz_xyzw": [
+            [
+              0.4619845491198844,
+              0.2944790416112024,
+              -0.03091534114731176,
+              -0.3628207866045496,
+              0.5810758920596182,
+              0.6532174352258663,
+              -0.322519560324201
+            ],
+            [
+              0.42000030989551207,
+              -0.32203823821245137,
+              0.00981545875802281,
+              -0.39661593018177443,
+              -0.5333826173874774,
+              0.6103927744753826,
+              0.43083575555329
+            ]
+          ],
+          "solved_q16": [
+            -0.42762005442221435,
+            1.003552703736417,
+            -0.1191374130958763,
+            -1.8492170096157434,
+            -0.42021981892301796,
+            -0.2831759460302028,
+            -0.511893145874573,
+            -0.280451897336517,
+            -1.1945251495246294,
+            -0.04312557587107724,
+            -2.1265456374832103,
+            0.27786037460980795,
+            0.18384288169304994,
+            0.6028567710775244,
+            0.7233999967575073,
+            0.0037000179290771484
+          ],
+          "clearance_score_m": 0.013590110963988818,
+          "closest_bodies": [
+            "wrist_yaw_R_Link",
+            "wrist_roll_R_Link"
+          ],
+          "max_joint_change_rad": 1.1945251495246294,
+          "minimum_joint_margin_rad": 0.1476432289224755
+        },
+        {
+          "name": "joint_midpoint",
+          "position_error_m": 2.1565688916008703e-09,
+          "rotation_error_rad": 6.13504076399047e-09,
+          "per_arm_position_error_m": [
+            2.1565688916008703e-09,
+            1.8611717127825043e-09
+          ],
+          "per_arm_rotation_error_rad": [
+            6.13504076399047e-09,
+            1.6022259009508264e-09
+          ],
+          "target_eef_xyz_xyzw": [
+            [
+              0.4619854637113336,
+              0.29447741991691107,
+              -0.0309148302774214,
+              -0.3628196056891231,
+              0.5810777021323856,
+              0.6532174460988853,
+              -0.3225176056034548
+            ],
+            [
+              0.4200032714057503,
+              -0.32203575045156585,
+              0.009815616182685585,
+              -0.3966142527442515,
+              -0.5333862383156827,
+              0.6103939655873826,
+              0.43083112941159896
+            ]
+          ],
+          "nearest_eef_xyz_xyzw": [
+            [
+              0.461985462046722,
+              0.29447741976737246,
+              -0.03091483164032116,
+              -0.3628196068407913,
+              0.581077699716455,
+              0.6532174470273666,
+              -0.32251760678012087
+            ],
+            [
+              0.42000327024739026,
+              -0.3220357492444873,
+              0.00981561536713449,
+              -0.39661425242191356,
+              -0.5333862378136269,
+              0.6103939660624131,
+              0.4308311296568869
+            ]
+          ],
+          "solved_q16": [
+            -0.7027559044137899,
+            1.23638647832045,
+            -0.6825922121387635,
+            -1.849212723466224,
+            -0.3341441395547316,
+            -0.14930178053935964,
+            -0.16952759884578125,
+            -0.5919995337298996,
+            -1.4228979400158224,
+            0.5136240627241928,
+            -2.1265340296761805,
+            0.13697175074972268,
+            0.252916575688911,
+            0.2697570596548096,
+            0.7233999967575073,
+            0.0037000179290771484
+          ],
+          "clearance_score_m": 0.02017365644600838,
+          "closest_bodies": [
+            "base_Link",
+            "proximal_roll_L_Link"
+          ],
+          "max_joint_change_rad": 1.0793385296761806,
+          "minimum_joint_margin_rad": 0.3238000032424926
+        }
+      ],
+      "frames": 747,
+      "max_position_error_m": 1.9981205151240695e-05,
+      "max_rotation_error_rad": 8.58181901892146e-05,
+      "max_joint_step_rad": 0.0343834494829407,
+      "head_policy": "fixed at saved home 41.5 degree head pose for offline planning; live replay replaces with measured head and recertifies"
+    },
+    "ik_cache": {
+      "hit": false,
+      "reason": "[Errno 2] No such file or directory: '/home/guest/pengyang/replay_hand/cache/ik/7f83a4b68482591cb03bd82afac0f4a84c90f98ce76acecb5969f454473f687d.npz'",
+      "path": "/home/guest/pengyang/replay_hand/cache/ik/7f83a4b68482591cb03bd82afac0f4a84c90f98ce76acecb5969f454473f687d.npz",
+      "load_seconds": 1.873587198999303
+    }
+  },
+  "hand_limits": {
+    "path": "/home/guest/pengyang/install/wuji_control/share/wuji_control/config/joint_limits.json",
+    "sha256": "4b8276883107432483d42247bd85382ad0e9db70c6eb5f869e053ad4c124611e"
+  },
+  "plan": {
+    "schema": "replay_hand_cross_v1",
+    "frame": "tron2_base_link",
+    "placement_policy": "preserve_common_frame_v1",
+    "execution_ready": false,
+    "motion_commands_sent": 0,
+    "source_stream": "final_handpose.npz:joints_camera_m",
+    "source_camera_id": "orbbec_gemini_335",
+    "source_frame": "undistorted_color_optical",
+    "alignment_version": "human_camera_direct_fit_v1",
+    "source_files": {
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/wuji2_camera_replay_trajectory.npz": "1987e1256ca75012db0ad587f850dad2aeece4f044ca271b906bbe1248a288a9",
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/source_observation.json": "7f1093a005f55020edaa4341fba2dfd0b598ad7adb17b02df42fb58315a4e73c",
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/zhuji_observation.json": "e729a0f1bd564e5b333e9b932eec61be73a9e26e882792230932b5f2f622648e",
+      "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/inputs/zhuji_camera_41p5.json": "7657d89f5ba26840a4fd399f2a95490437fecc4122b686884c5156f11ee0864f",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/alignment_config.json": "f2ff95e41fcf2c91dae9d867966c15b42221b6ea098304215b56c4efd2d6b177",
+      "/home/guest/pengyang/teleop/wuji_control/config/joint_limits.json": "4b8276883107432483d42247bd85382ad0e9db70c6eb5f869e053ad4c124611e",
+      "replay_robot/camera_trajectory_1987e125_20261111/convert_camera_trajectory.py": "c20927a93ba4a9be5cf3c379ddaf6fb69c0630ceea8d35c396716226a22f8fe4",
+      "/home/guest/pengyang/replay_hand/build_board_aligned395.py": "ea68ab230400fbd7e11dcd8d07e8990f95c52e2de3b5f988904c641d469132ae",
+      "/home/guest/pengyang/replay_hand/build_exported_trajectory.py": "1316edf290290ca1ebf03fe20500863e8e186c50a6e63e287a39cacff20e6660",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/calibration/left.json": "15afa40afb6fa7951989d4f5c26b161288ef3c6f32a95e53f1e551f027f1f208",
+      "/home/guest/pengyang/replay_robot/models/tron2_wuji_board_v1_20261110/calibration/right.json": "8d4505b9ae3401d0c5bb028e90b0b6c12f6c08e23918c6d5752fb08fa0f18dae"
+    },
+    "target_head_pitch_yaw_rad": [
+      0.7236999869346619,
+      -0.0006998220924288034
+    ],
+    "controlled_hand_origin": "B = Wuji base_link origin = confirmed board center",
+    "task_placement": {
+      "method": "Corresponding observed task-board frames; no additional task repositioning",
+      "target_camera_T_source_camera": [
+        [
+          0.9997230369737449,
+          -0.003883597079908672,
+          0.02321135536138286,
+          -0.012854603533171388
+        ],
+        [
+          0.004326896798593022,
+          0.9998086205597289,
+          -0.019078789755828315,
+          0.02920273681840277
+        ],
+        [
+          -0.023132818853002265,
+          0.0191739387756846,
+          0.9995485144622744,
+          -0.05507571979636949
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T_tron_base_source_camera": [
+        [
+          -0.01162547080257546,
+          -0.6484850676278391,
+          0.761138598083381,
+          0.10670977533895191
+        ],
+        [
+          -0.9998859840367627,
+          0.0002031937468404475,
+          -0.015098928410148335,
+          0.0019466124287755016
+        ],
+        [
+          0.009636771007553295,
+          -0.761227348284347,
+          -0.6484134922011797,
+          0.380266741496308
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "board_fingerprint": "437d28755b5102513fd2204b356c468f7d9618172b30ba59d7d60f049d63d928",
+      "physical_validation_complete": false
+    },
+    "per_arm_reanchoring_allowed": false,
+    "additional_rigid_task_placement_applied": false,
+    "hand_retargeting_applied": false,
+    "local_z_correction_applied": false,
+    "wrist_offset_added": false,
+    "adapter_length_added": false,
+    "bimanual_relative_matrix_error_max": 4.440892098500626e-16,
+    "assumptions": [
+      "User-supplied Orbbec observation corresponds to this trajectory camera and unchanged mounting.",
+      "Undistorted color optical coordinates use the original optical axes; no extra rectification rotation.",
+      "Corresponding board placements define task origins and axes.",
+      "Existing 41.5-degree target camera-to-base estimate remains applicable; not independently physically validated."
+    ],
+    "timestamp_semantics": "Source device clock preserved; not asserted to be Unix epoch",
+    "time_preprocessing": "Position linear / orientation Slerp / finger linear interpolation at original times; no duration scaling.",
+    "original_sample_max_gap_s": 0.1002400000000001,
+    "original_frames": 150,
+    "sides": {
+      "left": {
+        "T_sdk_eef_board_center": [
+          [
+            -0.02590094258816275,
+            -0.9996081244360443,
+            0.01061784980578053,
+            -0.00996297150940903
+          ],
+          [
+            -0.999372116085139,
+            0.025635028718964992,
+            -0.024458513734241377,
+            0.0009822991955358573
+          ],
+          [
+            0.02417674015567469,
+            -0.011244681588699984,
+            -0.9996444579806426,
+            0.07211807440614258
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "T_board_center_hand": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "target_xyz_min_m": [
+          0.4619854637113336,
+          0.05950049620040095,
+          -0.1760157364439298
+        ],
+        "target_xyz_max_m": [
+          0.5791463675015731,
+          0.2985476290238714,
+          0.03016752133059364
+        ],
+        "hand_speed_peak_rad_s": 0.7928775679934963,
+        "hand_limit_min_margin_rad": 0.39270716860945143
+      },
+      "right": {
+        "T_sdk_eef_board_center": [
+          [
+            -0.9997037179644264,
+            -0.02275891205402541,
+            0.008631813842967982,
+            -0.002983798934724363
+          ],
+          [
+            -0.022621045977565164,
+            0.9996200936999531,
+            0.015746636154322848,
+            0.0008311730062506711
+          ],
+          [
+            -0.008986910869891417,
+            0.015546710051098015,
+            -0.9998387546197653,
+            0.06894403937416507
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "T_board_center_hand": [
+          [
+            0.0,
+            -1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "target_xyz_min_m": [
+          0.3992955161587053,
+          -0.3732529371035434,
+          -0.18022419548935112
+        ],
+        "target_xyz_max_m": [
+          0.5526722999539477,
+          -0.10922377812571224,
+          0.03804268799010724
+        ],
+        "hand_speed_peak_rad_s": 0.665576048313542,
+        "hand_limit_min_margin_rad": 0.2884244751784002
+      }
+    },
+    "episode": "/home/guest/pengyang/replay_robot/camera_trajectory_1987e125_20261111/replay_input_50hz.npz",
+    "episode_sha256": "6017b0bbee60b48f276f34ab1fbf8fa9ba9e37725751af5d2743dc5774216369",
+    "source_duration_s": 14.91072,
+    "resampling": "Cartesian Slerp and hand linear interpolation at 50 Hz",
+    "arm_source": "Franka/Sharpa root mapped through assumed common camera frame to Tron2 SDK EEF",
+    "hand_source": "Sharpa 21 keypoints retargeted directly to deployed Wuji Hand 2 q20",
+    "joint_state_use": "No recorded Tron2 joints; replay_hand generates a multi-start first-frame and previous-solution continuous IK seed path",
+    "fk": {
+      "frame_id": "base_link",
+      "quaternion_order": "xyzw",
+      "implementation": "pengyang replay Model/FK",
+      "urdf_sha256": "17854fde22b27af58148f11fd449694888a63c702c1c46f4097fa1a059d79357",
+      "sdk_eef_offset_from_wrist_roll_m": [
+        -0.0338,
+        0.0,
+        -0.2125
+      ]
+    },
+    "cross_anchor": {
+      "policy": "preserve_common_frame_v1",
+      "absolute_camera_pose_preserved": true,
+      "bimanual_relative_pose_preserved": true,
+      "per_arm_reanchoring_applied": false
+    },
+    "cross_seed": {
+      "selected_first_seed": "joint_midpoint",
+      "first_frame_attempts": [
+        {
+          "name": "saved_home",
+          "position_error_m": 5.923925639721205e-07,
+          "rotation_error_rad": 1.8746028065718102e-06,
+          "per_arm_position_error_m": [
+            1.1282983142904877e-09,
+            5.923925639721205e-07
+          ],
+          "per_arm_rotation_error_rad": [
+            2.1842832493736514e-09,
+            1.8746028065718102e-06
+          ],
+          "target_eef_xyz_xyzw": [
+            [
+              0.4619854637113336,
+              0.29447741991691107,
+              -0.0309148302774214,
+              -0.3628196056891231,
+              0.5810777021323856,
+              0.6532174460988853,
+              -0.3225176056034548
+            ],
+            [
+              0.4200032714057503,
+              -0.32203575045156585,
+              0.009815616182685585,
+              -0.3966142527442515,
+              -0.5333862383156827,
+              0.6103939655873826,
+              0.43083112941159896
+            ]
+          ],
+          "nearest_eef_xyz_xyzw": [
+            [
+              0.4619854628344098,
+              0.2944774206070661,
+              -0.030914830443997898,
+              -0.3628196050173588,
+              0.5810777028411225,
+              0.6532174460828881,
+              -0.32251760511463756
+            ],
+            [
+              0.42000326952224637,
+              -0.3220358877342752,
+              0.009816192445524896,
+              -0.3966144557029612,
+              -0.5333868885052016,
+              0.6103933277570125,
+              0.43083104127709254
+            ]
+          ],
+          "solved_q16": [
+            -0.6334620700772181,
+            1.2120575142522376,
+            -0.5793600554803634,
+            -1.849212973267178,
+            -0.3467252251398974,
+            -0.16370336835724555,
+            -0.21068092681057787,
+            -1.1607785143073555,
+            -1.4489931522399482,
+            1.1206756635749953,
+            -2.126532012568092,
+            0.11276132821955274,
+            0.2594316062813771,
+            0.21611036179956122,
+            0.7233999967575073,
+            0.0037000179290771484
+          ],
+          "clearance_score_m": 0.020176637637860206,
+          "closest_bodies": [
+            "base_Link",
+            "proximal_roll_L_Link"
+          ],
+          "max_joint_change_rad": 1.697425365139287,
+          "minimum_joint_margin_rad": 0.3238000032424926
+        },
+        {
+          "name": "test_ik_ready",
+          "position_error_m": 3.870953324307941e-06,
+          "rotation_error_rad": 1.2449072648770955e-05,
+          "per_arm_position_error_m": [
+            1.9306366665972955e-06,
+            3.870953324307941e-06
+          ],
+          "per_arm_rotation_error_rad": [
+            5.828199065213527e-06,
+            1.2449072648770955e-05
+          ],
+          "target_eef_xyz_xyzw": [
+            [
+              0.4619854637113336,
+              0.29447741991691107,
+              -0.0309148302774214,
+              -0.3628196056891231,
+              0.5810777021323856,
+              0.6532174460988853,
+              -0.3225176056034548
+            ],
+            [
+              0.4200032714057503,
+              -0.32203575045156585,
+              0.009815616182685585,
+              -0.3966142527442515,
+              -0.5333862383156827,
+              0.6103939655873826,
+              0.43083112941159896
+            ]
+          ],
+          "nearest_eef_xyz_xyzw": [
+            [
+              0.4619845491198844,
+              0.2944790416112024,
+              -0.03091534114731176,
+              -0.3628207866045496,
+              0.5810758920596182,
+              0.6532174352258663,
+              -0.322519560324201
+            ],
+            [
+              0.42000030989551207,
+              -0.32203823821245137,
+              0.00981545875802281,
+              -0.39661593018177443,
+              -0.5333826173874774,
+              0.6103927744753826,
+              0.43083575555329
+            ]
+          ],
+          "solved_q16": [
+            -0.42762005442221435,
+            1.003552703736417,
+            -0.1191374130958763,
+            -1.8492170096157434,
+            -0.42021981892301796,
+            -0.2831759460302028,
+            -0.511893145874573,
+            -0.280451897336517,
+            -1.1945251495246294,
+            -0.04312557587107724,
+            -2.1265456374832103,
+            0.27786037460980795,
+            0.18384288169304994,
+            0.6028567710775244,
+            0.7233999967575073,
+            0.0037000179290771484
+          ],
+          "clearance_score_m": 0.013590110963988818,
+          "closest_bodies": [
+            "wrist_yaw_R_Link",
+            "wrist_roll_R_Link"
+          ],
+          "max_joint_change_rad": 1.1945251495246294,
+          "minimum_joint_margin_rad": 0.1476432289224755
+        },
+        {
+          "name": "joint_midpoint",
+          "position_error_m": 2.1565688916008703e-09,
+          "rotation_error_rad": 6.13504076399047e-09,
+          "per_arm_position_error_m": [
+            2.1565688916008703e-09,
+            1.8611717127825043e-09
+          ],
+          "per_arm_rotation_error_rad": [
+            6.13504076399047e-09,
+            1.6022259009508264e-09
+          ],
+          "target_eef_xyz_xyzw": [
+            [
+              0.4619854637113336,
+              0.29447741991691107,
+              -0.0309148302774214,
+              -0.3628196056891231,
+              0.5810777021323856,
+              0.6532174460988853,
+              -0.3225176056034548
+            ],
+            [
+              0.4200032714057503,
+              -0.32203575045156585,
+              0.009815616182685585,
+              -0.3966142527442515,
+              -0.5333862383156827,
+              0.6103939655873826,
+              0.43083112941159896
+            ]
+          ],
+          "nearest_eef_xyz_xyzw": [
+            [
+              0.461985462046722,
+              0.29447741976737246,
+              -0.03091483164032116,
+              -0.3628196068407913,
+              0.581077699716455,
+              0.6532174470273666,
+              -0.32251760678012087
+            ],
+            [
+              0.42000327024739026,
+              -0.3220357492444873,
+              0.00981561536713449,
+              -0.39661425242191356,
+              -0.5333862378136269,
+              0.6103939660624131,
+              0.4308311296568869
+            ]
+          ],
+          "solved_q16": [
+            -0.7027559044137899,
+            1.23638647832045,
+            -0.6825922121387635,
+            -1.849212723466224,
+            -0.3341441395547316,
+            -0.14930178053935964,
+            -0.16952759884578125,
+            -0.5919995337298996,
+            -1.4228979400158224,
+            0.5136240627241928,
+            -2.1265340296761805,
+            0.13697175074972268,
+            0.252916575688911,
+            0.2697570596548096,
+            0.7233999967575073,
+            0.0037000179290771484
+          ],
+          "clearance_score_m": 0.02017365644600838,
+          "closest_bodies": [
+            "base_Link",
+            "proximal_roll_L_Link"
+          ],
+          "max_joint_change_rad": 1.0793385296761806,
+          "minimum_joint_margin_rad": 0.3238000032424926
+        }
+      ],
+      "frames": 747,
+      "max_position_error_m": 1.9981205151240695e-05,
+      "max_rotation_error_rad": 8.58181901892146e-05,
+      "max_joint_step_rad": 0.0343834494829407,
+      "head_policy": "fixed at saved home 41.5 degree head pose for offline planning; live replay replaces with measured head and recertifies"
+    },
+    "ik_cache": {
+      "hit": false,
+      "reason": "[Errno 2] No such file or directory: '/home/guest/pengyang/replay_hand/cache/ik/7f83a4b68482591cb03bd82afac0f4a84c90f98ce76acecb5969f454473f687d.npz'",
+      "path": "/home/guest/pengyang/replay_hand/cache/ik/7f83a4b68482591cb03bd82afac0f4a84c90f98ce76acecb5969f454473f687d.npz",
+      "load_seconds": 1.873587198999303
+    },
+    "backend": "MoveJ + measured ServoP takeover + synchronized ServoP/Wuji",
+    "source_frames": 747,
+    "waypoints": 28,
+    "segments": 27,
+    "reused_seed_frames": 746,
+    "first_frame_arm_source": "recorded /joint_states arm positions",
+    "first_frame_joint_adjustment_rad": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "arm_joint_limits": "URDF mechanical ranges intersected with the SDK MoveJ envelope; targets outside it are acknowledged but not executed by the firmware",
+    "requested_speed": 1.0,
+    "nominal_motion_duration_s": 39.52853215012297,
+    "waypoint_settle_allowance_s": 0.0,
+    "ik_max_position_residual_m": 1.9981205151240695e-05,
+    "ik_max_rotation_residual_rad": 8.58181901892146e-05,
+    "ik_position_tolerance_m": 0.02,
+    "ik_rotation_tolerance_rad": 0.03490658503988659,
+    "hand_first_frame_tolerance_rad": 0.10471975511965978,
+    "sampled_chord_position_error_m": 0.019833901912719765,
+    "sampled_chord_rotation_error_rad": 0.047602661834161696,
+    "chord_rotation_tolerance_rad": 0.05235987755982989,
+    "certified_branch_switches": [],
+    "cartesian_accuracy_note": "Chord deviation checked at source resampling points and in the chord interior; collision bounds are continuous.",
+    "collision": {
+      "samples": 2639,
+      "conservative_min_clearance_m": 0.00694934130925316,
+      "closest_bodies": [
+        "wrist_yaw_R_Link",
+        "wrist_roll_R_Link"
+      ],
+      "required_clearance_m": 0.005,
+      "method": "joint-linear swept bound; model mechanical ranges without added margin"
+    },
+    "model_dependencies": {
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/xml/robot.xml": "4606c9f961568ef4b545f0a25c048dbdf2c2997f7a590fcaa15a8c525b6e8a8e",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/base_Link.STL": "25b6fc44a8455e116c24ca636628f648426c26ad9b2903d10719ca387f999abc",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/base_2_Link.STL": "0949b4cc8fe9908e42cadbd700b20248b813e216e37c36b4c5ed3c05f2132659",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/base_3_Link.STL": "e97bbbb149445b4ce2a7df2589b53ac03045c0386e64590eb2efc5d3524c2fce",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/head_base_Link.STL": "e6b25387d68c6f04d6dcd02921ba1f3c4dcec0643d1ef7c0695c25edc45efb06",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/head_yaw_Link.STL": "de86690ddec7325c3ba475b793ef0553451c497fc7f0debe65b249ba014b7a52",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/head_pitch_Link.STL": "dc4b2b780fddbf176694181c7c4b8ef532fc78eb8f8cf2f08b6ab26add131481",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_pitch_L_Link.STL": "171103f1f263229576012211466e138c99dccc5a8550d5d3492c2f94e82fadac",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_roll_L_Link.STL": "c416c88546061b0cd1a4500e327af0bc9f7cac0f8ef500ff86b63bf72d37ec86",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_L_Link.STL": "8e5253aed24455af89b99b253b102c1f71049375a1b7ad11fba32ef27339cde1",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_L_Link_collision.STL": "f2b044dde500d8cbdbdfc91aecbe48520488d739685396d1e6ce8b865be76df8",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/elbow_L_Link.STL": "46497ab102b97d2ab6989fe045d3a9f1a2643d550b05e2a4c4b064eb550a1857",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_yaw_L_Link.STL": "4124b79f0550554c60a604002fe7d86945de937d38040cac44ff5d7e772115ec",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_pitch_L_Link.STL": "8aedb74d479b723b522395d8d4684ebeb1d17468a785442ccdd7e725082071d6",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_L_Link.STL": "3dd3da5518daef34c5b085c0bd774090967634d49de0c4a5b59d2f9fd84014f2",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_L_Link_collision.STL": "bcf56e6ce5a65bae40b6becfbe83c341a34556c516e686c0c2fdd943d3da6ca5",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/grasper_L_Link.STL": "d7e9c953da25135b7f26c056604c8bca5899794959d63f414fc23f41a5f7ba2f",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_pitch_R_Link.STL": "4740dbcf4899717de6fb8adf11766f163679ecee0fdf8a6ec06f6bdf9f8bcf7c",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_roll_R_Link.STL": "be9df467853b4c12938c7e80b95e7a7542506019d321291481b9967a050a6204",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_R_Link.STL": "e2dc549ce47bb1fb833b0dfe5aa2a29c25f89a581fda343d3b2726cce0c27995",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/proximal_yaw_R_Link_collision.STL": "697b41afc439a30e0fb51bfcf7ffdce4d3da8bf3a20ce64846254bba58adb487",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/elbow_R_Link.STL": "956b51d6896448839193224a7fbb07ec3660dd4601f97caf2c1a87192a443d7e",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_yaw_R_Link.STL": "a22e01ab09be564b16685ca00c263561ee781bfe11c08d84519f300a307a7969",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_pitch_R_Link.STL": "c16046ed84cecd27ac1ddf1ba5c3ae3e63cc2a006dd00097a97a7cadb5b8b763",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_R_Link.STL": "ca68b01599b1cb941ceec2f7cc106cc7926b023ad884cf1cfc69ec3ca40367c9",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/wrist_roll_R_Link_collision.STL": "7f750db7fdcfd687d40766759c4d5e9702289d1e05fe6000cf7f286a99ea5661",
+      "/home/guest/wanchi/code/replay_eef/vendor/tron2-robot-description/tron2a/DACH_TRON2A/meshes/grasper_R_Link.STL": "9f6a32b450fbd523a433808a9367c7c9494b9bb36169e724545d06fe21ea95c1"
+    },
+    "clearance_metric": "pair distance minus required margin plus 5 mm; not raw geometric distance",
+    "required_pair_clearance_m": {
+      "same_wrist_yaw_roll": 0.001,
+      "other_pairs": 0.005
+    },
+    "collision_scope": "Existing arm/body/head geometry; excludes Wuji/adapter/cables and external obstacles",
+    "head_policy": "Offline uses recorded initial head; live preserves current head and recertifies the entire path; no head commands",
+    "timing_policy": "One source clock; both components slow together at either speed cap",
+    "dense_collision": {
+      "samples": 3158,
+      "conservative_min_clearance_m": 0.007042991114854372,
+      "closest_bodies": [
+        "wrist_yaw_L_Link",
+        "wrist_roll_L_Link"
+      ],
+      "required_clearance_m": 0.005,
+      "method": "joint-linear swept bound; model mechanical ranges without added margin"
+    },
+    "nominal_motion_seconds": 15.19158349355014,
+    "playback_seconds": 16.49158349355014,
+    "requested_arm_rate_hz": 300.0,
+    "hand_publish_rate_hz": 50.0,
+    "arm_target_speed_limit_rad_s": 1.0,
+    "hand_target_speed_limit_rad_s": 1.0,
+    "arm_accuracy_policy": "record only",
+    "hand_tracking_limit_rad": 0.2,
+    "arm_feedback_range_policy": "URDF mechanical ranges; target range remains SDK/URDF intersection"
+  },
+  "hand_body_path": {
+    "samples": 1064,
+    "min_swept_clearance_m": 0.06657851803853634,
+    "closest_bodies": [
+      "wrist_roll_R_Link",
+      "r_thumb_proximal"
+    ],
+    "required_m": 0.005,
+    "scope": "Inter-hand and hand-versus-arms/body/head meshes; own fixed palm carrier excluded",
+    "excluded": [
+      "within-hand contacts",
+      "environment",
+      "cables",
+      "adapter geometry"
+    ]
+  },
+  "offline_validated": true
+}

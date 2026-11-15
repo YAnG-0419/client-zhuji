@@ -1,0 +1,24 @@
+{
+  "record": "replay_robot/camera_trajectory_1987e125_20261111/README.md",
+  "summary": "replay_robot/camera_trajectory_1987e125_20261111/validation_summary.json",
+  "input_sha256": "1987e1256ca75012db0ad587f850dad2aeece4f044ca271b906bbe1248a288a9",
+  "replay_sha256": "6017b0bbee60b48f276f34ab1fbf8fa9ba9e37725751af5d2743dc5774216369",
+  "source_observation_sha256": "7f1093a005f55020edaa4341fba2dfd0b598ad7adb17b02df42fb58315a4e73c",
+  "code_hashes": {
+    "replay_hand/replay_full.py": "f5113558124300c0ef2ae309efada8ad54be90569b707d3c917da8acc9275a8e",
+    "replay_hand/replay_full.sh": "ecc4938c413bb8cf4c84bb5c340379e5f2d07f09823d7c24d6b5f92002d12811",
+    "replay_hand/full_sync.py": "c22782c60ad2658ee17cffcf1950d434572d101eaa2e41d8cb179a74e0a569b8",
+    "replay_hand/episode_cross.py": "cf1c2df33b885dbc559e2db3d9708bdff3d9b526a49b4e95bf85654bed13a950",
+    "replay_hand/planner_cross.py": "9171498a595b47a80b3b0094e2344905da8ef7fdf5d74684a5b37e64b6640285",
+    "replay_hand/ik_cache.py": "536e6fc7685b953f1e9c850edebcc90bbeadcfae71d3bb366e1bdcf31a29b9e4",
+    "replay/replay.py": "389ff99acd85cb89134fd3247f0a97f788fc25c20295d1b37b9388f2c48f77a9",
+    "replay/transport.py": "c0a236c5414b14bdf6eebcc38afb8d25e51e87283db825b5e9c19201bb94efb5",
+    "replay/replay_thresholds.py": "d2667a4339344e2d11ca4f768f64205a62986613513d20fe0e6dc2d50f9bb4c1",
+    "replay_hand/hand_body_clearance.py": "7a8a5c478a7f799b63f3c94b7e8575e24f1ed3de13f1e45fd13bbcdd8c9f838c",
+    "replay_hand/build_board_aligned395.py": "ea68ab230400fbd7e11dcd8d07e8990f95c52e2de3b5f988904c641d469132ae",
+    "replay_hand/build_exported_trajectory.py": "1316edf290290ca1ebf03fe20500863e8e186c50a6e63e287a39cacff20e6660"
+  },
+  "motion_commands_sent": 0,
+  "extra_task_repositioning_applied": false,
+  "offline_validated": true
+}

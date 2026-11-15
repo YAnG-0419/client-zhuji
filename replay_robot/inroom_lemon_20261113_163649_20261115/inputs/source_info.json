@@ -1,0 +1,12 @@
+{
+  "model": "wuji2",
+  "source": "/home/descfly/Xflow/traj_21keypoints/replay_test/inroom/lemon_20261113_163649/keypoints21_camera.npz",
+  "frames": 347,
+  "target_fps": 29.969730572122156,
+  "duplicate_source_frames": 0,
+  "legacy_timestamp_adapter": true,
+  "source_sha256": "bb1d9e4850d270395d6fd340741e090e5bc65f9056798f8d6bdb716f379934c4",
+  "frame": "undistorted_color_optical",
+  "free_root": true,
+  "arm_ik": false
+}

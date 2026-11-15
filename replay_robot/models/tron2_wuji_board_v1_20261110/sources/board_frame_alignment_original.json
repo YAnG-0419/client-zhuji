@@ -1,0 +1,23 @@
+{
+  "schema": "pengyang_board_frame_alignment_v1",
+  "confirmed_date": "2026-11-10",
+  "authority": "User confirmed center coincidence and left/right trajectory axes in this chat",
+  "transform_convention": "T_A_B maps coordinates from B into A; column vectors; metres",
+  "trajectory_hand_frame": "Exported Wuji l_base_link / r_base_link, after the package alignment_version correction",
+  "origin_policy": "Use the trajectory hand-frame origin as the replay wrist center, coincident with the calibration board center per operator instruction. Do not add the model-internal base_link-to-wrist offset.",
+  "board_center_in_board_m": [0.14, 0.09, 0.0],
+  "sides": {
+    "left": {
+      "R_board_center_hand": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      "axis_relation": "+X_hand=+X_board; +Y_hand=+Y_board; +Z_hand=+Z_board",
+      "calibration": "calibration/left_arm/handeye_result_current.json"
+    },
+    "right": {
+      "R_board_center_hand": [[0, -1, 0], [1, 0, 0], [0, 0, 1]],
+      "axis_relation": "+X_hand=+Y_board; +Y_hand=-X_board; +Z_hand=+Z_board (right-handed)",
+      "calibration": "calibration/right_arm/handeye_result_current.json"
+    }
+  },
+  "source_scene_to_tron_base": null,
+  "execution_ready": false
+}

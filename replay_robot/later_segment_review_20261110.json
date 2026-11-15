@@ -1,0 +1,227 @@
+{
+  "episode594": {
+    "previous_left_passing_intervals_s": [
+      [
+        10.366666563,
+        13.099999869
+      ]
+    ],
+    "previous_right_passing_intervals_s": [
+      [
+        19.166666475,
+        24.933333084
+      ],
+      [
+        26.366666403,
+        32.133333012
+      ]
+    ],
+    "previous_both_passing_intervals_s": [],
+    "independent_later_samples": [
+      {
+        "source_s": 16.066666506,
+        "seeds": 11,
+        "left": {
+          "position_mm": 52.544712791478496,
+          "rotation_deg": 12.707728786523838,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 50.95754890367706,
+          "rotation_deg": 5.617317798724283,
+          "passed": false
+        },
+        "passing_seeds_per_arm": [
+          0,
+          0
+        ]
+      },
+      {
+        "source_s": 24.099999759,
+        "seeds": 11,
+        "left": {
+          "position_mm": 51.60927259978295,
+          "rotation_deg": 12.464683800616832,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 5.3846669273041075e-09,
+          "rotation_deg": 1.4045691296876461e-09,
+          "passed": true
+        },
+        "passing_seeds_per_arm": [
+          0,
+          9
+        ]
+      },
+      {
+        "source_s": 32.133333012,
+        "seeds": 11,
+        "left": {
+          "position_mm": 51.4859181821218,
+          "rotation_deg": 12.43427463819366,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 3.4301942606339773,
+          "rotation_deg": 0.8375679972085236,
+          "passed": true
+        },
+        "passing_seeds_per_arm": [
+          0,
+          8
+        ]
+      }
+    ]
+  },
+  "episode615": {
+    "previous_left_passing_intervals_s": [
+      [
+        9.9999999,
+        11.233333221
+      ]
+    ],
+    "previous_right_passing_intervals_s": [
+      [
+        17.33333316,
+        27.233333061
+      ]
+    ],
+    "previous_both_passing_intervals_s": [],
+    "independent_later_samples": [
+      {
+        "source_s": 15.133333182,
+        "seeds": 11,
+        "left": {
+          "position_mm": 66.3786276687476,
+          "rotation_deg": 14.413471098525662,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 57.10893519789269,
+          "rotation_deg": 6.519583359115262,
+          "passed": false
+        },
+        "passing_seeds_per_arm": [
+          0,
+          0
+        ]
+      },
+      {
+        "source_s": 22.699999773,
+        "seeds": 11,
+        "left": {
+          "position_mm": 66.18918129707603,
+          "rotation_deg": 14.366311116539489,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 3.1302650797911193e-09,
+          "rotation_deg": 8.5331460855979e-10,
+          "passed": true
+        },
+        "passing_seeds_per_arm": [
+          0,
+          9
+        ]
+      },
+      {
+        "source_s": 30.266666364,
+        "seeds": 11,
+        "left": {
+          "position_mm": 66.119876756149,
+          "rotation_deg": 14.346169482257157,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 10.68040683570536,
+          "rotation_deg": 2.4982979781415953,
+          "passed": false
+        },
+        "passing_seeds_per_arm": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "episode616": {
+    "previous_left_passing_intervals_s": [
+      [
+        5.699999943,
+        7.633333257
+      ],
+      [
+        9.933333234,
+        12.733333206
+      ]
+    ],
+    "previous_right_passing_intervals_s": [
+      [
+        18.566666481,
+        35.899999641
+      ],
+      [
+        36.33333297,
+        42.066666246
+      ]
+    ],
+    "previous_both_passing_intervals_s": [],
+    "independent_later_samples": [
+      {
+        "source_s": 21.033333123,
+        "seeds": 11,
+        "left": {
+          "position_mm": 51.779105982690275,
+          "rotation_deg": 12.347882042370713,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 2.972425785706831e-09,
+          "rotation_deg": 7.608636293739945e-10,
+          "passed": true
+        },
+        "passing_seeds_per_arm": [
+          0,
+          8
+        ]
+      },
+      {
+        "source_s": 31.566666351,
+        "seeds": 11,
+        "left": {
+          "position_mm": 51.90627860432979,
+          "rotation_deg": 12.392147684320848,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 1.2603899348052235e-08,
+          "rotation_deg": 3.765316028032661e-09,
+          "passed": true
+        },
+        "passing_seeds_per_arm": [
+          0,
+          9
+        ]
+      },
+      {
+        "source_s": 42.066666246,
+        "seeds": 11,
+        "left": {
+          "position_mm": 45.79629825382008,
+          "rotation_deg": 10.642384893292965,
+          "passed": false
+        },
+        "right": {
+          "position_mm": 2.595666028282284e-10,
+          "rotation_deg": 1.0652819195957082e-10,
+          "passed": true
+        },
+        "passing_seeds_per_arm": [
+          0,
+          8
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-10",
+  "operator_confirmed": "左右手的手腕末端中心与各自标定板中心位于同一个位置。此确认未指定板轴与手模型轴的旋转关系，也未指定该物理点对应模型 base_link 还是 wrist 原点。",
+  "board_center_board_m": [
+    0.14,
+    0.09,
+    0.0
+  ],
+  "sides": {
+    "left": {
+      "calibration": "/home/guest/pengyang/calibration/left_arm/handeye_result_current.json",
+      "resolved_calibration": "/home/guest/pengyang/calibration/left_arm/handeye_result_provisional_20261023.json",
+      "sha256": "15afa40afb6fa7951989d4f5c26b161288ef3c6f32a95e53f1e551f027f1f208",
+      "T_eef_board": [
+        [
+          -0.02590094258816275,
+          -0.9996081244360443,
+          0.01061784980578053,
+          0.08362789165217774
+        ],
+        [
+          -0.999372116085139,
+          0.025635028718964992,
+          -0.024458513734241377,
+          0.13858724286274848
+        ],
+        [
+          0.02417674015567469,
+          -0.011244681588699984,
+          -0.9996444579806426,
+          0.06974535212733113
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "confirmed_wrist_center_in_sdk_eef_m": [
+        -0.009962971509409037,
+        0.0009822991955358573,
+        0.07211807440614258
+      ],
+      "rotation_semantics": "R_eef_board describes calibration board axes; not automatically Wuji base_link or wrist axes",
+      "original_validation_passed": false
+    },
+    "right": {
+      "calibration": "/home/guest/pengyang/calibration/right_arm/handeye_result_current.json",
+      "resolved_calibration": "/home/guest/pengyang/calibration/right_arm/handeye_result_provisional_20261024_141110.json",
+      "sha256": "8d4505b9ae3401d0c5bb028e90b0b6c12f6c08e23918c6d5752fb08fa0f18dae",
+      "T_eef_board": [
+        [
+          -0.9997037179644264,
+          -0.02275891205402541,
+          0.008631813842967982,
+          0.13902302366515762
+        ],
+        [
+          -0.022621045977565164,
+          0.9996200936999531,
+          0.015746636154322848,
+          -0.08596768898988598
+        ],
+        [
+          -0.008986910869891417,
+          0.015546710051098015,
+          -0.9998387546197653,
+          0.06880300299135104
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "confirmed_wrist_center_in_sdk_eef_m": [
+        -0.002983798934724363,
+        0.0008311730062506703,
+        0.06894403937416507
+      ],
+      "rotation_semantics": "R_eef_board describes calibration board axes; not automatically Wuji base_link or wrist axes",
+      "original_validation_passed": false
+    }
+  },
+  "trajectory_frame": "source assembly lychee_root (wuji_motion_scene.npz); local per-side Sharpa root (wuji_trajectory.npz)",
+  "fully_aligned_to_tron_sdk_eef": false,
+  "motion_commands_sent": 0
+}

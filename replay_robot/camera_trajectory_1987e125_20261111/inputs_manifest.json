@@ -1,0 +1,18 @@
+{
+  "wuji2_camera_replay_trajectory.npz": {
+    "source": "/Users/lpy/Library/Containers/com.bytedance.macos.feishu/Data/Downloads/wuji2_camera_replay_trajectory.npz",
+    "sha256": "1987e1256ca75012db0ad587f850dad2aeece4f044ca271b906bbe1248a288a9"
+  },
+  "source_observation.json": {
+    "source": "/Users/lpy/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_6tebdh233x5612_43fb/msg/file/2026-11/observation.json",
+    "sha256": "7f1093a005f55020edaa4341fba2dfd0b598ad7adb17b02df42fb58315a4e73c"
+  },
+  "zhuji_observation.json": {
+    "source": "/Users/lpy/Documents/ws/Xflow/calibration/observations/zhuji/observation.json",
+    "sha256": "e729a0f1bd564e5b333e9b932eec61be73a9e26e882792230932b5f2f622648e"
+  },
+  "zhuji_camera_41p5.json": {
+    "source": "/Users/lpy/Documents/ws/Xflow/calibration/handeye/zhuji/head_41p5/left_head_41p5_kinematic_estimate.json",
+    "sha256": "7657d89f5ba26840a4fd399f2a95490437fecc4122b686884c5156f11ee0864f"
+  }
+}

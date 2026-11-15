@@ -1,0 +1,16 @@
+{
+  "samples": 1064,
+  "min_swept_clearance_m": 0.06657851803853634,
+  "closest_bodies": [
+    "wrist_roll_R_Link",
+    "r_thumb_proximal"
+  ],
+  "required_m": 0.005,
+  "scope": "Inter-hand and hand-versus-arms/body/head meshes; own fixed palm carrier excluded",
+  "excluded": [
+    "within-hand contacts",
+    "environment",
+    "cables",
+    "adapter geometry"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "episode": "lemon_20261113_163649",
+  "model": "wuji2",
+  "frames": 347,
+  "duplicate_source_frames": 0,
+  "target_fps": 29.969730572122156,
+  "all_solver_status_positive": true,
+  "joint_limit_violation_max_rad": 0.0,
+  "independent_fk_max_abs_m": 1.1102230246251565e-16,
+  "timestamps_and_actions_exact": true
+}

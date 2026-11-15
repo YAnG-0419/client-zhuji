@@ -1,0 +1,81 @@
+{
+  "original_trajectory_sha256": "1987e1256ca75012db0ad587f850dad2aeece4f044ca271b906bbe1248a288a9",
+  "replay_input_sha256": "6017b0bbee60b48f276f34ab1fbf8fa9ba9e37725751af5d2743dc5774216369",
+  "original_frames": 150,
+  "replay_samples": 747,
+  "source_duration_s": 14.91072,
+  "planned_playback_s": 16.49158349355014,
+  "preparation_time_included": false,
+  "extra_task_repositioning_applied": false,
+  "hand_retargeting_applied": false,
+  "frame_conversion": "T_base_hand = T_base_zhuji_camera @ T_zhuji_camera_board @ inverse(T_source_camera_board) @ T_source_camera_hand; T_base_sdk = T_base_hand @ inverse(T_B_hand) @ inverse(T_sdk_B)",
+  "offline_validated": true,
+  "execution_requested": false,
+  "hardware_commands_sent": 0,
+  "ik_max_position_error_mm": 0.019981205151240695,
+  "ik_max_rotation_error_deg": 0.004917020103293004,
+  "max_adjacent_joint_step_rad": 0.0343834494829407,
+  "sampled_chord_position_error_mm": 19.833901912719764,
+  "sampled_chord_rotation_error_deg": 2.7274316166859474,
+  "arm_collision": {
+    "samples": 2639,
+    "conservative_min_clearance_m": 0.00694934130925316,
+    "closest_bodies": [
+      "wrist_yaw_R_Link",
+      "wrist_roll_R_Link"
+    ],
+    "required_clearance_m": 0.005,
+    "method": "joint-linear swept bound; model mechanical ranges without added margin"
+  },
+  "dense_arm_collision": {
+    "samples": 3158,
+    "conservative_min_clearance_m": 0.007042991114854372,
+    "closest_bodies": [
+      "wrist_yaw_L_Link",
+      "wrist_roll_L_Link"
+    ],
+    "required_clearance_m": 0.005,
+    "method": "joint-linear swept bound; model mechanical ranges without added margin"
+  },
+  "hand_body_collision": {
+    "samples": 1064,
+    "min_swept_clearance_m": 0.06657851803853634,
+    "closest_bodies": [
+      "wrist_roll_R_Link",
+      "r_thumb_proximal"
+    ],
+    "required_m": 0.005,
+    "scope": "Inter-hand and hand-versus-arms/body/head meshes; own fixed palm carrier excluded",
+    "excluded": [
+      "within-hand contacts",
+      "environment",
+      "cables",
+      "adapter geometry"
+    ]
+  },
+  "thresholds": {
+    "position_m": 0.02,
+    "rotation_deg": 2,
+    "chord_rotation_deg": 3,
+    "ordinary_pair_clearance_m": 0.005,
+    "same_wrist_yaw_roll_clearance_m": 0.001
+  },
+  "source_sample_gaps_s": [
+    0.09983999999999948,
+    0.1002400000000001
+  ],
+  "time_adapter": "Linear position/fingers and Slerp orientation at 50 Hz without changing duration; original arrays retained",
+  "successful_run": "/home/guest/pengyang/replay_hand/runs/replay_full_20261111_155612_120667",
+  "initial_environment_failure_run": "/home/guest/pengyang/replay_hand/runs/replay_full_20261111_155525_119980",
+  "remaining_live_checks": [
+    "Current mode and healthy arm/hand feedback",
+    "Measured head recertification",
+    "Current-to-first-frame MoveJ and hand preparation path"
+  ],
+  "calibration_assumptions": [
+    "User-supplied Orbbec observation corresponds to this trajectory camera and unchanged mounting.",
+    "Undistorted color optical coordinates use the original optical axes; no extra rectification rotation.",
+    "Corresponding board placements define task origins and axes.",
+    "Existing 41.5-degree target camera-to-base estimate remains applicable; not independently physically validated."
+  ]
+}

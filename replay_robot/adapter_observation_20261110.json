@@ -1,0 +1,44 @@
+{
+  "operator_description": "手和臂之间空隙内的转接法兰长度大概 5 cm",
+  "approximate_length_m": 0.05,
+  "status": "approximate operator observation; not a replacement for calibrated tool transform",
+  "display_geometry_only": true,
+  "collision_geometry_updated": false,
+  "tool_transforms_modified": false,
+  "sides": {
+    "left": {
+      "model_reference_distance_m": 0.06040677254993838,
+      "start_reference": "URDF grasper_L_Joint origin (not independently measured mounting face)",
+      "end_reference": "calibrated board center, operator-confirmed replay hand root",
+      "start_base_m": [
+        -0.00043999999999999595,
+        0.16758,
+        -0.6258900000000001
+      ],
+      "end_base_m": [
+        -0.012503,
+        0.1685623,
+        -0.6850719
+      ],
+      "illustration_radius_m": 0.018,
+      "radius_measured": false
+    },
+    "right": {
+      "model_reference_distance_m": 0.06256841576930006,
+      "start_reference": "URDF grasper_R_Joint origin (not independently measured mounting face)",
+      "end_reference": "calibrated board center, operator-confirmed replay hand root",
+      "start_base_m": [
+        -0.00043999999999999595,
+        -0.16758,
+        -0.6258900000000001
+      ],
+      "end_base_m": [
+        -0.0055238,
+        -0.1667488,
+        -0.688246
+      ],
+      "illustration_radius_m": 0.018,
+      "radius_measured": false
+    }
+  }
+}
