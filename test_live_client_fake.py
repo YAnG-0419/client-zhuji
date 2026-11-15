@@ -196,7 +196,7 @@ def run_fake(robot_track=True, distance=0.02, cycles=2):
     connection = FakeConnection(distance)
     live_client.start_planner = lambda args: (types.SimpleNamespace(join=lambda timeout: None,
                                                                      is_alive=lambda: False),
-                                              connection, {"fake": True})
+                                              connection, {"fake": True, "history_execution_frames": 16})
     live_client.CameraFeed = FakeCamera
     live_client.validate_camera_info = lambda a, b: {}
     live_client.camera_info_from_json = lambda path: {}
@@ -208,7 +208,8 @@ def run_fake(robot_track=True, distance=0.02, cycles=2):
                                          cycles=cycles, steps=32, image_mode="virtual_cam0",
                                          virtual_preset="cam0_newk", denoise_steps=10, arm_cap=0.8,
                                          hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
-                                         settle=0.05, rate=300.0, max_failures=3, relay_port=28765)
+                                         settle=0.05, rate=300.0, max_failures=3, relay_port=28765,
+                                         speed_ratio=None)
             try:
                 live_client.run(args, Path(folder), result)
             except Exception as exc:

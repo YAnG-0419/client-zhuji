@@ -85,7 +85,7 @@ def synchronized_step_times(arm_q, hand_q, eef, start_arm_q, start_hand_q, start
     durations = np.empty(count)
     reasons = []
     for index in range(count):
-        candidates = {"frame": base_dt,
+        candidates = {"frame": float(np.broadcast_to(base_dt, (count,))[index]),
                       "arm": float(np.max(np.abs(arm[index + 1] - arm[index]))) / arm_cap,
                       "hand": float(np.max(np.abs(hand[index + 1] - hand[index]))) / hand_cap}
         linear = angular = 0.0
@@ -107,7 +107,7 @@ class ChunkPlanner:
     def __init__(self, root, config_path, *, model, task, relay_host="127.0.0.1",
                  relay_port=28765, image_mode="virtual_cam0", virtual_preset="cam0_newk",
                  arm_cap=0.8, hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
-                 num_inference_steps=10, steps=32):
+                 num_inference_steps=10, steps=32, speed_ratio=None):
         self.root = Path(root).resolve()
         self.config_path = Path(config_path).resolve()
         self.config = json.loads(self.config_path.read_text())
@@ -115,7 +115,8 @@ class ChunkPlanner:
         self.mapping = DeploymentMapping.load(self.root, self.config_path, "live_zhuji_camera")
         self.kinematics = ProprioKinematics(self.mapping)
         self.camera_T_base = np.linalg.inv(self.mapping.base_from_source_camera)
-        self.task, self.model_name = str(task), str(model)
+        self.task = str(task)
+        self.model_name = None if model in (None, "", "auto") else str(model)
         self.image_mode, self.virtual_preset = image_mode, virtual_preset
         self.caps = dict(arm_cap=float(arm_cap), hand_cap=float(hand_cap),
                          linear_cap=float(linear_cap), angular_cap=float(angular_cap))
@@ -129,13 +130,26 @@ class ChunkPlanner:
         info = self.client.info()
         if self.task not in info["tasks"]:
             raise ValueError("task %s is not served; tasks: %s" % (self.task, sorted(info["tasks"])))
+        self.model_name = self.client.model     # resolved default_model when None
         model_info = dict(info["models"][self.model_name])
         model_info.setdefault("fps", 30.0)
+        # speed_ratio = training-motion speed / robot speed (server 2026-11-15).
+        # Default comes from the server (hh 4, rb 1); history offset and step
+        # times both follow it.  Older servers have no speed_ratio: hh -> 4.
+        default_ratio = model_info.get("speed_ratio")
+        if default_ratio is None:
+            default_ratio = 4.0 if model_info.get("contract") == "humanhand" else 1.0
+        self.speed_ratio = float(default_ratio if speed_ratio is None else speed_ratio)
+        if not 0.25 <= self.speed_ratio <= 16.0:
+            raise ValueError("speed_ratio must be within [0.25, 16]")
+        self.request_speed_ratio = None if speed_ratio is None else self.speed_ratio
+        training_history = model_info.get("training_history_offset_frames")
+        if training_history is None:
+            training_history = 4 if model_info.get("contract") == "humanhand" else 16
+        self.history_frames = int(round(float(training_history) * self.speed_ratio))
         self.timing = ModelTiming.from_info(model_info)
         self.deployment_id = str(model_info["deployment_id"])
         self.client.reset()
-        # humanhand: 4 native frames = 16 execution frames; realrobot: native 16.
-        self.history_frames = 16
         # zhuji has Wuji hands, which match neither training hand (human for hh,
         # Sharpa for rb).  Both contracts therefore use the bone-length-normalized
         # free-root fit; the Sharpa-geometry Kabsch shortcut does not apply here.
@@ -170,6 +184,7 @@ class ChunkPlanner:
                 "root_mode": self.root_mode, "root_mode_reason": self.root_reason,
                 "image_mode": self.image_mode, "virtual_preset": self.virtual_preset,
                 "history_execution_frames": self.history_frames, "caps": self.caps,
+                "speed_ratio": self.speed_ratio,
                 "num_inference_steps": self.num_inference_steps, "steps": self.steps}
 
     def _preprocessor(self, camera):
@@ -207,7 +222,8 @@ class ChunkPlanner:
             response = self.client.infer(task=self.task, head_rgb=head, history_rgb=history,
                                          keypoints=points.astype(np.float32),
                                          sample_ns=int(snapshot["sample_ns"]), image_space="rgb320",
-                                         num_inference_steps=self.num_inference_steps)
+                                         num_inference_steps=self.num_inference_steps,
+                                     speed_ratio=self.request_speed_ratio)
         except XFlowRemoteError as error:
             if error.code == "STALE_SESSION":
                 self.client.session_id = None
@@ -246,6 +262,12 @@ class ChunkPlanner:
 
         response, inference_trace = self._infer(snapshot, points)
         predicted = np.asarray(response["keypoints"], float)[:self.steps]
+        # Robot-time execution instants from the server (speed_ratio applied);
+        # default hh/rb: k/30 s.  Speed caps may only lengthen these steps.
+        step_times = np.asarray(response["keypoint_time_s"], float)[:self.steps]
+        base_durations = np.diff(np.r_[0.0, step_times])
+        if np.any(base_durations <= 0) or not np.isfinite(base_durations).all():
+            raise PlanRejected("server keypoint_time_s is not increasing")
         report["rpc"] = {"round_trip_ms": response["round_trip_ms"],
                          "timings_ms": response["timings_ms"],
                          "deployment_id": response["deployment_id"]}
@@ -333,10 +355,12 @@ class ChunkPlanner:
 
         start_eef = np.stack([np.asarray(snapshot["eef_command"][i], float) for i in range(2)])
         times, reasons = synchronized_step_times(
-            q_path[:, :14], q20, eef, q16[:14], command_q20, start_eef, **self.caps)
+            q_path[:, :14], q20, eef, q16[:14], command_q20, start_eef,
+            base_dt=base_durations, **self.caps)
         report["timing"] = {"duration_s": float(times[-1]),
-                            "nominal_duration_s": self.steps / EXECUTION_FPS,
-                            "stretch": float(times[-1] * EXECUTION_FPS / self.steps),
+                            "nominal_duration_s": float(step_times[-1]),
+                            "speed_ratio": self.speed_ratio,
+                            "stretch": float(times[-1] / step_times[-1]),
                             "binding": {name: reasons.count(name) for name in sorted(set(reasons))}}
 
         tick = time.perf_counter()

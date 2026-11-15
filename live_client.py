@@ -296,7 +296,7 @@ def start_planner(args):
                   virtual_preset=args.virtual_preset, arm_cap=args.arm_cap,
                   hand_cap=args.hand_cap, linear_cap=args.linear_cap,
                   angular_cap=args.angular_cap, num_inference_steps=args.denoise_steps,
-                  steps=args.steps)
+                  steps=args.steps, speed_ratio=args.speed_ratio)
     process = context.Process(target=worker_main, args=(child, kwargs), daemon=True)
     process.start()
     if not parent.poll(180):
@@ -344,6 +344,7 @@ def run(args, out, result):
         print("Starting planner (XFlow %s, task %s) ..." % (args.model, args.task), flush=True)
         planner, connection, describe = start_planner(args)
         result["planner"] = describe
+        history_frames = int(describe["history_execution_frames"])
         print("PLANNER READY " + json.dumps(describe), flush=True)
 
         _, Model, Transport = replay_backend()
@@ -478,7 +479,7 @@ def run(args, out, result):
                 # Request the next chunk once the robot has settled in hold.
                 if (chunk is None and pending is None and ready_plan is None and stop_reason is None
                         and now - settle_since >= args.settle and np.max(abs(dq[:14])) < 0.05):
-                    image = camera.sample(settle_since + args.settle * 0.5, 16)
+                    image = camera.sample(settle_since + args.settle * 0.5, history_frames)
                     if image is not None:
                         anchor_q20 = hand_session.last.copy() if args.execute else measured_q20
                         snapshot = dict(image, q16=q.copy(), eef_measured=measured_eef,
@@ -667,7 +668,11 @@ def run(args, out, result):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--task", required=True, help="flower | whiteboard | tidying | lemon | chili")
-    parser.add_argument("--model", default="hh_a12")
+    parser.add_argument("--model", default=None,
+                        help="model name on the service; default: the service's default_model")
+    parser.add_argument("--speed-ratio", type=float, default=None,
+                        help="training-motion speed / robot speed; default from the server "
+                             "(hh 4, rb 1). Also sets the history offset.")
     parser.add_argument("--execute", action="store_true", help="move the robot; default is a live shadow run")
     parser.add_argument("--step", action="store_true", help="ask for Enter before every chunk")
     parser.add_argument("--cycles", type=int, default=0, help="0 = until Ctrl-C")
@@ -684,6 +689,8 @@ def main():
     parser.add_argument("--max-failures", type=int, default=3)
     parser.add_argument("--relay-port", type=int, default=28765)
     args = parser.parse_args()
+    if args.speed_ratio is not None and not 0.25 <= args.speed_ratio <= 8.0:
+        parser.error("--speed-ratio must be within [0.25, 8] (history must fit the 6 s camera buffer)")
     if not 50 <= args.rate <= 500 or not 2 <= args.steps <= 32 or args.cycles < 0:
         parser.error("invalid rate/steps/cycles")
     if not (0 < args.arm_cap <= 1.0 and 0 < args.hand_cap <= 1.0 and 0 < args.linear_cap <= 0.5

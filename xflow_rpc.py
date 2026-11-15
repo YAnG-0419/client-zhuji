@@ -62,7 +62,8 @@ class XFlowClient:
             self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         except OSError:  # AF_UNIX/socketpair in tests.
             pass
-        self.model = str(model)
+        # None: use the service's default_model (one model per service).
+        self.model = None if model is None else str(model)
         self.expected_deployment_id = (None if deployment_id is None
                                        else str(deployment_id))
         self.infer_budget = None if infer_budget is None else int(infer_budget)
@@ -99,8 +100,11 @@ class XFlowClient:
             raise XFlowProtocolError("unsupported XFlow protocol identity")
         models = response.get("models")
         tasks = response.get("tasks")
+        if self.model is None and isinstance(models, dict):
+            self.model = response.get("default_model")
         if not isinstance(models, dict) or self.model not in models:
-            raise XFlowProtocolError("configured model is not loaded: " + self.model)
+            raise XFlowProtocolError("configured model is not loaded: %s (loaded: %s)"
+                                     % (self.model, sorted(models) if isinstance(models, dict) else None))
         if not isinstance(tasks, dict) or not tasks:
             raise XFlowProtocolError("info has no tasks")
         model = models[self.model]
@@ -136,7 +140,7 @@ class XFlowClient:
 
     def infer(self, *, task, head_rgb, history_rgb, keypoints, sample_ns,
               image_space="rgb320", keypoint_valid=None, seed=0,
-              num_inference_steps=10):
+              num_inference_steps=10, speed_ratio=None):
         if self.info_response is None:
             raise XFlowError("info() must succeed before infer()")
         if self.session_id is None:
@@ -169,6 +173,7 @@ class XFlowClient:
             "session_id": self.session_id, "sample_ns": sample_ns,
             "task": task, "model": self.model, "image_space": image_space,
             "seed": int(seed), "num_inference_steps": int(num_inference_steps),
+            **({} if speed_ratio is None else {"speed_ratio": float(speed_ratio)}),
             "observation": observation,
         }
         # The server consumes request_id/sample_ns before validating later
@@ -203,9 +208,16 @@ class XFlowClient:
                            (32, 2, 21, 3), "response keypoints")
         output_times = _array(response.get("keypoint_time_s"), np.float32,
                               (32,), "response keypoint_time_s")
-        expected_times = np.asarray(self.model_info["keypoint_time_s"], np.float32)
-        if not np.allclose(output_times, expected_times, atol=1e-7, rtol=0):
-            raise XFlowProtocolError("response keypoint_time_s differs from info")
+        if "speed_ratio" in request:
+            # Server >= 2026-11-15: times are robot time for the requested ratio.
+            if not np.isclose(float(response.get("speed_ratio", np.nan)), request["speed_ratio"]):
+                raise XFlowProtocolError("response speed_ratio differs from request")
+            if output_times[0] <= 0 or np.any(np.diff(output_times) <= 0):
+                raise XFlowProtocolError("response keypoint_time_s is not increasing")
+        else:
+            expected_times = np.asarray(self.model_info["keypoint_time_s"], np.float32)
+            if not np.allclose(output_times, expected_times, atol=1e-6, rtol=0):
+                raise XFlowProtocolError("response keypoint_time_s differs from info")
         proprio = _array(response.get("proprio_keypoints"), np.float32,
                          (2, 21, 3), "response proprio_keypoints")
         expected_proprio = points.copy()

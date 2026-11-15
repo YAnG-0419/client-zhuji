@@ -6,7 +6,8 @@
 
    ```bash
    cd /Users/lpy/Documents/ws/Xflow/zhuji-client
-   ./mac_relay.sh aw-hha12-tidy-5090-1114     # 参数是 5090 上的任务名，脚本自动读 endpoint
+   ./mac_relay.sh xflow-4srv-te-5090-1115/flower-hh   # <任务>/<服务>；单服务任务只写任务名
+   # 脚本从该服务的 endpoint.json 读 host 和 port
    ```
 
    看到 `relay ready on zhuji 127.0.0.1:28765` 后保持这个终端开着。
@@ -40,7 +41,7 @@ XFlow 推理 → free-root Wuji2 重定向（骨长归一化）→ 平滑（窗�
 
 ## 常用参数
 
-`--model hh_a12|rb_a12`（需要中继到对应服务）、`--virtual-preset cam0_newk|hh_435|hh_335`、
+`--model <名字>`（默认用服务的 default_model，一个服务一个模型时不用填）、`--speed-ratio R`（默认取服务端：hh 4、rb 1；同时决定历史帧间隔 round(训练历史帧×R) 和每步执行时间，范围 0.25–8）、`--virtual-preset cam0_newk|hh_435|hh_335`、
 `--image-mode stretch_undistort`、`--steps N`（每个 chunk 只执行前 N 步）、`--denoise-steps 5`、
 `--arm-cap/--hand-cap/--linear-cap/--angular-cap`（只能调低到 replay 的上限以内）。
 
