@@ -46,6 +46,20 @@ XFlow 推理 → free-root Wuji2 重定向（骨长归一化）→ 平滑（窗�
 
 ## 产物
 
-`client/runs/live-{shadow,exec}-*/`：`result.json`、`cycles.jsonl`（每周期往返、各阶段耗时、拉长比例、
-锚定偏移、历史帧）、`cycleNNN.npz`（预测关键点、EEF/q20/q16 目标、时间）、`arm_feedback.jsonl`、
-`hand_feedback.jsonl`、`robot_wire.jsonl`、`stack.log`。
+`client/runs/live-{shadow,exec}-*/` 中每次推理用唯一 `plan_id` 贯穿模型、规划、发送和反馈：
+
+- `audit_plans/planNNN.npz`：实际送给模型的 320×320 head/history 图、当前 kp21、服务原始
+  kp21 输出与 `keypoint_time_s`、采样时的 EEF/q16/q20，以及最终规划 EEF/q16/q20；
+- `audit_plans/planNNN.json`：task/model/deployment/request/session、RTT、服务各阶段耗时、规划报告；
+  即使重定向、IK 或碰撞门拒绝，也保留已经产生的模型输入/输出和拒绝原因；
+- `audit_executions/execNNN.npz`：300 Hz 实际 ServoP 目标及发送时间，50 Hz 目标与实测
+  SDK EEF、q16/dq16、Wuji q20，和逐样本 EEF/q20/q16 误差；
+- `audit_executions/execNNN.json`：命令/反馈频率，跟踪误差 mean/p50/p95/max、左右臂最大误差、
+  是否触发运行时 EEF 门。q16 只作参考，因为 ServoP 可能选择不同的冗余 IK 分支；
+- `audit_summary.json`：按 `plan_id` 配对后的快速索引。若规划目标正确但反馈误差大，优先查真机
+  执行；若反馈紧跟目标但动作语义不对，优先查模型输入/输出与重定向。
+
+原有 `result.json`、`cycles.jsonl`、`planNNN_targets.npz`、`arm_feedback.jsonl`、
+`hand_feedback.jsonl`、`robot_wire.jsonl` 和 `stack.log` 继续保留。影子模式也生成 plan/feedback
+记录，但明确标记 `tracking_comparison_valid=false`，不能用它评价真机跟踪性能。相机帧和数组由
+单独的后台线程以不压缩 NPZ 写盘，避免压缩或磁盘延迟阻塞 300 Hz ServoP 发送循环。

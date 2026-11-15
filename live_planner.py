@@ -186,20 +186,55 @@ class ChunkPlanner:
         head = processor.process(snapshot["head_rgb"])
         history = (None if snapshot.get("history_rgb") is None
                    else processor.process(snapshot["history_rgb"]))
+        trace = {
+            "schema": "xflow_inference_trace_v1",
+            "request_created_time_ns": time.time_ns(),
+            "sample_ns": int(snapshot["sample_ns"]),
+            "task": self.task, "model": self.model_name,
+            "deployment_id_expected": self.deployment_id,
+            "contract": self.timing.contract,
+            "image_space": "rgb320",
+            "num_inference_steps": self.num_inference_steps,
+            "history_sent": history is not None,
+            "head_rgb": head,
+            "history_rgb": history,
+            "request_keypoints": points.astype(np.float32),
+        }
+        self.last_trace = trace
         if self.client.session_id is None:
             self.client.reset()
         try:
-            return self.client.infer(task=self.task, head_rgb=head, history_rgb=history,
-                                     keypoints=points.astype(np.float32),
-                                     sample_ns=int(snapshot["sample_ns"]), image_space="rgb320",
-                                     num_inference_steps=self.num_inference_steps)
+            response = self.client.infer(task=self.task, head_rgb=head, history_rgb=history,
+                                         keypoints=points.astype(np.float32),
+                                         sample_ns=int(snapshot["sample_ns"]), image_space="rgb320",
+                                         num_inference_steps=self.num_inference_steps)
         except XFlowRemoteError as error:
             if error.code == "STALE_SESSION":
                 self.client.session_id = None
             raise PlanRejected("server error " + str(error))
+        trace.update({
+            "response_received_time_ns": time.time_ns(),
+            "response_request_id": response["request_id"],
+            "response_session_id": response["session_id"],
+            "response_model": response["model"],
+            "response_deployment_id": response["deployment_id"],
+            "response_contract": response["contract"],
+            "response_task": response["task"],
+            "response_round_trip_ms": float(response["round_trip_ms"]),
+            "response_inference_seconds": float(response["inference_seconds"]),
+            "response_timings_ms": response["timings_ms"],
+            "response_keypoints": np.asarray(response["keypoints"], np.float32),
+            "response_keypoint_time_s": np.asarray(response["keypoint_time_s"], np.float32),
+            "response_proprio_keypoints": np.asarray(response["proprio_keypoints"], np.float32),
+        })
+        return response, trace
 
     def plan(self, snapshot):
         began = time.perf_counter()
+        self.last_trace = {"schema": "xflow_inference_trace_v1",
+                           "sample_ns": int(snapshot["sample_ns"]),
+                           "task": self.task, "model": self.model_name,
+                           "inference_started": False}
         report = {"sample_ns": int(snapshot["sample_ns"]), "history_sent": snapshot.get("history_rgb") is not None}
         measured_eef = {side: pose7_matrix(snapshot["eef_measured"][i]) for i, side in enumerate(SIDES)}
         measured_q20 = {side: np.asarray(snapshot["q20_measured"][i], float) for i, side in enumerate(SIDES)}
@@ -209,7 +244,7 @@ class ChunkPlanner:
         points = self.kinematics.measured_keypoints(measured_eef, measured_q20)
         stage = {"proprio_ms": 1000 * (time.perf_counter() - began)}
 
-        response = self._infer(snapshot, points)
+        response, inference_trace = self._infer(snapshot, points)
         predicted = np.asarray(response["keypoints"], float)[:self.steps]
         report["rpc"] = {"round_trip_ms": response["round_trip_ms"],
                          "timings_ms": response["timings_ms"],
@@ -317,7 +352,8 @@ class ChunkPlanner:
         report["stage_ms"] = stage
         return {"times_s": times, "eef": eef, "q20": q20, "q16": q_path,
                 "predicted_keypoints": predicted.astype(np.float32),
-                "current_keypoints": points.astype(np.float32), "report": report}
+                "current_keypoints": points.astype(np.float32), "report": report,
+                "inference_trace": inference_trace}
 
 
 def worker_main(connection, kwargs):
@@ -338,7 +374,8 @@ def worker_main(connection, kwargs):
         try:
             connection.send({"ok": True, "plan": planner.plan(request)})
         except PlanRejected as error:
-            connection.send({"ok": False, "reason": str(error)})
+            connection.send({"ok": False, "reason": str(error),
+                             "inference_trace": planner.last_trace})
         except BaseException as error:
             connection.send({"ok": False, "reason": type(error).__name__ + ": " + str(error),
-                             "unexpected": True})
+                             "unexpected": True, "inference_trace": planner.last_trace})

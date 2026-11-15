@@ -40,6 +40,8 @@ for _path in (CLIENT, ROOT / "replay_hand", ROOT / "replay", ROOT / "tools", ROO
 
 from image_preprocess import camera_info_dict, camera_info_from_json, validate_camera_info  # noqa: E402
 from live_planner import worker_main  # noqa: E402
+from deployment_audit import (AsyncAuditSink, ExecutionAuditRecorder,
+                              SCHEMA as AUDIT_SCHEMA, build_run_summary)  # noqa: E402
 
 SIDES = ("left", "right")
 LOCK = "/home/guest/wanchi/replay_tip_align_test_1030/.hands_replay.lock"
@@ -320,8 +322,21 @@ def run(args, out, result):
 
     robot = hands = stack = stack_log = session = hand_session = camera = None
     planner = connection = None
+    execution_audit = None
+    audit_sink = AsyncAuditSink(out)
     ros = False
     cycles_log = (out / "cycles.jsonl").open("w")
+    result["audit"] = {"schema": AUDIT_SCHEMA, "plan_count": 0,
+                       "execution_count": 0, "plans": [], "executions": [],
+                       "writer": "single_background_thread_uncompressed_npz",
+                       "tracking_records_are_diagnostic_only": not args.execute}
+
+    def finish_execution_audit(status, completed):
+        nonlocal execution_audit
+        if execution_audit is None:
+            return None
+        audit_sink.submit_execution(execution_audit, status, completed)
+        execution_audit = None
     try:
         commands = process_commands()
         if any(owner in c for c in commands for owner in OWNERS):
@@ -392,7 +407,7 @@ def run(args, out, result):
         chunk = None; exec_start = 0.0; chunk_q16_start = q0.copy()
         settle_since = time.monotonic(); pending = None; pending_sample = None
         ready_plan = None; ready_start = None; gate = StepGate()
-        cycle = failures = 0
+        cycle = failures = plan_sequence = 0
         period = 1.0 / args.rate
         began = time.monotonic(); n = 0; last_tick = 0.0
         stop_reason = None
@@ -409,6 +424,7 @@ def run(args, out, result):
                     else:  # shadow: the robot did not move, keep anchoring to measurement
                         command_eef = sdk_pose_xyzw(robot.pose)
                         command_q20 = np.array([hands.feedback()[s] for s in SIDES])
+                    finish_execution_audit("completed", True)
                     chunk = None; camera.set_execution_active(False)
                     settle_since = now
                     cycle += 1
@@ -427,6 +443,8 @@ def run(args, out, result):
                 robot.commands_sent += 1
                 robot.lease_at = time.monotonic()
                 last_sent = target_eef.copy()
+                if execution_audit is not None:
+                    execution_audit.record_send(now - exec_start, target_eef)
 
             # ----- 50 Hz supervision -----
             if now - last_tick >= 0.02:
@@ -438,10 +456,22 @@ def run(args, out, result):
                     result["max_eef_tracking_m"] = max(result.get("max_eef_tracking_m", 0.0), float(max(ep)))
                     result["max_eef_tracking_rad"] = max(result.get("max_eef_tracking_rad", 0.0), float(max(er)))
                     if max(ep) > EEF_TRACK_POS or max(er) > EEF_TRACK_ROT:
+                        if execution_audit is not None:
+                            # Preserve the exact violating arm sample without
+                            # sending another hand target after the guard trips.
+                            fault_q20 = np.array([hands.feedback()[s] for s in SIDES])
+                            execution_audit.record_feedback(
+                                now - exec_start, target_eef, target_q20,
+                                measured_eef, fault_q20, q, dq,
+                                arm_guard_failure=True)
                         raise RuntimeError("EEF tracking error %.4f m / %.4f rad" % (max(ep), max(er)))
                     measured_q20 = hand_session.tick(target_q20, "xflow_exec" if chunk is not None else "xflow_hold")
                 else:
                     measured_q20 = np.array([hands.feedback()[s] for s in SIDES])
+                if execution_audit is not None:
+                    execution_audit.record_feedback(
+                        now - exec_start, target_eef, target_q20, measured_eef,
+                        measured_q20, q, dq)
                 if camera.error:
                     raise RuntimeError("camera: " + str(camera.error))
 
@@ -457,18 +487,25 @@ def run(args, out, result):
                         drift_p, drift_r = pose_errors(measured_eef, command_eef)
                         if args.execute and (max(drift_p) > 0.02 or max(drift_r) > math.radians(3)):
                             raise RuntimeError("held pose drifted %.3f m from the command" % max(drift_p))
+                        plan_id = plan_sequence
+                        plan_sequence += 1
                         connection.send({k: v for k, v in snapshot.items()})
                         pending = time.monotonic()
                         pending_sample = dict(eef=measured_eef.copy(), q20=measured_q20.copy(),
                                               eef_command=command_eef.copy(), q20_command=np.array(anchor_q20),
                                               history=image["history_rgb"] is not None,
-                                              history_reason=image["history_missing_reason"])
+                                              history_reason=image["history_missing_reason"],
+                                              plan_id=plan_id, snapshot=snapshot)
 
                 if pending is not None and connection.poll():
                     answer = connection.recv()
                     latency = time.monotonic() - pending
                     pending = None
-                    row = dict(cycle=cycle, planning_s=latency, ok=answer["ok"],
+                    plan_id = pending_sample["plan_id"]
+                    artifact = audit_sink.submit_plan(
+                        plan_id, pending_sample["snapshot"], answer)
+                    row = dict(cycle=cycle, plan_id=plan_id, planning_s=latency,
+                               plan_artifact=artifact, ok=answer["ok"],
                                history_sent=pending_sample["history"],
                                history_missing_reason=pending_sample["history_reason"])
                     if not answer["ok"]:
@@ -481,6 +518,8 @@ def run(args, out, result):
                     else:
                         failures = 0
                         plan = answer["plan"]
+                        plan["_plan_id"] = plan_id
+                        plan["_plan_artifact"] = artifact
                         rep = plan["report"]
                         row.update(rtt_ms=rep["rpc"]["round_trip_ms"], stage_ms=rep["stage_ms"],
                                    duration_s=rep["timing"]["duration_s"], stretch=rep["timing"]["stretch"],
@@ -489,10 +528,12 @@ def run(args, out, result):
                                                    r_deg=math.degrees(rep["anchor"][s]["local_offset_rotation_rad"]),
                                                    q_rad=rep["anchor"][s]["q_offset_abs_max_rad"],
                                                    decay=rep["anchor"][s]["decay_steps"]) for s in SIDES})
-                        np.savez_compressed(out / ("cycle%03d.npz" % cycle), times_s=plan["times_s"],
+                        targets_path = out / ("plan%04d_targets.npz" % plan_id)
+                        np.savez_compressed(targets_path, times_s=plan["times_s"],
                                             eef=plan["eef"], q20=plan["q20"], q16=plan["q16"],
                                             predicted_keypoints=plan["predicted_keypoints"],
                                             current_keypoints=plan["current_keypoints"])
+                        row["targets_npz"] = str(targets_path)
                         drift_p, drift_r = pose_errors(measured_eef, pending_sample["eef"])
                         moved = max(drift_p) > 0.003 or max(drift_r) > math.radians(1.5) or \
                             np.max(abs(measured_q20 - pending_sample["q20"])) > 0.08
@@ -519,9 +560,17 @@ def run(args, out, result):
                         ready_plan = None; settle_since = time.monotonic()
                     elif decision == "go":
                         # Start exactly where the plan was anchored (same commanded pose/q20).
-                        chunk = ChunkSampler(ready_start[0], ready_start[1], ready_plan)
+                        plan_to_execute = ready_plan
+                        chunk = ChunkSampler(ready_start[0], ready_start[1], plan_to_execute)
                         ready_plan = None
                         exec_start = time.monotonic(); chunk_q16_start = q.copy()
+                        execution_audit = ExecutionAuditRecorder(
+                            out, plan_to_execute["_plan_id"], plan_to_execute,
+                            ready_start[0], ready_start[1], q.copy(), execute=args.execute,
+                            arm_rate_hz=args.rate,
+                            plan_artifact=plan_to_execute["_plan_artifact"],
+                            eef_position_limit_m=EEF_TRACK_POS,
+                            eef_rotation_limit_rad=EEF_TRACK_ROT)
                         camera.set_execution_active(True)
                         if not args.execute:
                             print("  (shadow) chunk not sent", flush=True)
@@ -548,6 +597,11 @@ def run(args, out, result):
         result["completed"] = True
     finally:
         errors = []
+        if execution_audit is not None:
+            try:
+                finish_execution_audit(result.get("stop_reason", "fault_or_cleanup"), False)
+            except Exception as exc:
+                errors.append("deployment audit: " + str(exc))
         cycles_log.close()
         if connection is not None:
             try:
@@ -597,6 +651,14 @@ def run(args, out, result):
                 save_trace(robot, out, result)
         if ros:
             rclpy.shutdown()
+        audit_output = audit_sink.close()
+        result["audit"]["plans"] = audit_output["plans"]
+        result["audit"]["executions"] = audit_output["executions"]
+        result["audit"]["plan_count"] = len(audit_output["plans"])
+        result["audit"]["execution_count"] = len(audit_output["executions"])
+        if audit_output["errors"]:
+            result["audit"]["errors"] = audit_output["errors"]
+            errors.append("deployment audit writer failed")
         if errors:
             result["cleanup_errors"] = errors
             raise RuntimeError("; ".join(errors))
@@ -647,6 +709,10 @@ def main():
     finally:
         lock.close()
         signal.signal(signal.SIGTERM, old)
+        try:
+            result["audit_index"] = build_run_summary(out)
+        except BaseException as exc:
+            result["audit_index_error"] = type(exc).__name__ + ": " + str(exc)
         save(out / "result.json", result)
         print("REPORT", out / "result.json", flush=True)
     return 0 if result.get("completed") else 1

@@ -234,6 +234,12 @@ class LiveClientFakeHardwareTest(unittest.TestCase):
         self.assertFalse(result["controller_hold"]["emergency_stop_sent"])
         self.assertTrue(result["controller_hold"]["developer_mode"])
         self.assertGreater(result["arm_motion_commands_sent"], 500)
+        self.assertEqual(result["audit"]["plan_count"], 2)
+        self.assertEqual(result["audit"]["execution_count"], 2)
+        self.assertTrue(all(item["tracking_comparison_valid"]
+                            for item in result["audit"]["executions"]))
+        self.assertTrue(all(item["feedback_count"] > 20
+                            for item in result["audit"]["executions"]))
 
     def test_guard_fault_holds_without_emergency_stop(self):
         # The robot ignores commands, so the EEF tracking guard must trip.
@@ -243,6 +249,10 @@ class LiveClientFakeHardwareTest(unittest.TestCase):
         self.assertEqual(result["arm_stop"], "controller_hold")
         self.assertFalse(result["controller_hold"]["emergency_stop_sent"])
         self.assertEqual(result["emergency_stops_suppressed"], 0)
+        self.assertEqual(result["audit"]["execution_count"], 1)
+        execution = result["audit"]["executions"][0]
+        self.assertEqual(execution["arm_guard_failure_sample_count"], 1)
+        self.assertGreater(execution["eef_position_error_m"]["max"], 0.04)
 
 
 if __name__ == "__main__":
