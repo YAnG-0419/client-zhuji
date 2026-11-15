@@ -6,7 +6,7 @@
 
    ```bash
    cd /Users/lpy/Documents/ws/Xflow/zhuji-client
-   ./mac_relay.sh xflow-4srv-te-5090-1115/flower-hh   # <任务>/<服务>；单服务任务只写任务名
+   ./mac_relay.sh xflow-4srv-hh15k-rb30k-5090-1115/flower-hh   # <任务>/<服务>；单服务任务只写任务名
    # 脚本从该服务的 endpoint.json 读 host 和 port
    ```
 
