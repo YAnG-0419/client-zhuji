@@ -332,15 +332,18 @@ def run(args):
         history = (processor.process(data["history_rgb"])
                    if "history_rgb" in data else None)
         service = config["xflow"]
-        with XFlowClient(service["relay_host"], service["relay_port"], model=service["model"],
-                         deployment_id=service["deployment_id"], infer_budget=1) as client:
+        # Follow whichever service the relay points at: model/deployment_id are
+        # optional pins, so a new checkpoint needs no config edit.
+        with XFlowClient(service["relay_host"], service["relay_port"],
+                         model=service.get("model"),
+                         deployment_id=service.get("deployment_id"), infer_budget=1) as client:
             info = client.info(); client.reset()
             response = client.infer(task=args.task, head_rgb=head, history_rgb=history,
                                     keypoints=current_points.astype(np.float32),
                                     sample_ns=int(data["sample_ns"]), image_space="rgb320",
                                     num_inference_steps=getattr(args, "num_inference_steps", 10))
             predicted = response["keypoints"][:steps]
-            model_info = dict(info["models"][service["model"]])
+            model_info = dict(info["models"][client.model])
             model_info.setdefault("fps", 30.0)
             timing = ModelTiming.from_info(model_info)
             rpc_report = {"server": "remote", "infer_requests": 1,

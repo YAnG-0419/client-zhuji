@@ -33,8 +33,9 @@
     "protocol_version": 4,
     "relay_host": "127.0.0.1",
     "relay_port": 28765,
-    "model": "hh_a12",
-    "deployment_id": "34ca15a63ef03aa8",
+    "model": null,
+    "deployment_id": null,
+    "model_pin_note": "null follows the relayed service's default_model; set a name/id to pin one checkpoint",
     "image_space": "rgb320",
     "validation_infer_budget": 10,
     "admin_commands_exposed": false
