@@ -55,6 +55,22 @@ XFlow 推理 → free-root Wuji2 重定向（骨长归一化）→ 平滑（窗�
 `--prefetch 0.5` 能去掉大部分停顿；`cycles.jsonl` 里每段记 `splice`（跳过步数、放慢系数、峰值）。
 注意：预取时观测是在运动中采的，锚定改为"采样时刻的指令位姿"，静止检查对该段不适用。
 
+## 可视化
+
+每次运行后生成一个自带数据的 HTML（不需要联网、不需要服务）：
+
+```bash
+cd /home/guest/pengyang
+/home/guest/.pixi/bin/pixi run --locked python client/visualize_run.py            # 最新一次
+/home/guest/.pixi/bin/pixi run --locked python client/visualize_run.py client/runs/live-exec-...
+# 然后在 Mac 上：scp zhuji:<上面打印的路径> . && open report.html
+```
+
+左边是模型当时看到的 320×320 画面，叠加该步预测的 21 个关键点（蓝=左手、橙=右手、灰=送进去的当前
+关键点），下方滑块切换 32 步；再下面是各段概览表，点一行切换。右边是选中段的四张图：末端位置
+指令 vs 实测、末端跟踪误差、预测手腕轨迹、手指最大跟踪误差。被拒的段也会保留画面和模型输出，
+方便区分"模型给错了"还是"执行没跟上"。
+
 ## 常用参数
 
 `--model <名字>`（默认用服务的 default_model，一个服务一个模型时不用填）、`--speed-ratio R`（默认取服务端：hh 4、rb 1；同时决定历史帧间隔 round(训练历史帧×R) 和每步执行时间，范围 0.25–8）、`--virtual-preset cam0_newk|hh_435|hh_335`、
