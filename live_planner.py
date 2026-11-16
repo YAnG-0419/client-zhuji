@@ -34,7 +34,10 @@ EEF_BOX = np.asarray([[[.250, .732], [-.213, .900], [-.673, .5]],
                       [[.250, .732], [-.900, .213], [-.673, .5]]], dtype=float)
 
 
-IK_LIMIT_MARGIN = 0.02  # rad, see ChunkPlanner.__init__
+IK_LIMIT_MARGIN = 0.02
+# Orientation we accept once a joint is against its limit: the arm simply
+# cannot turn further, so rejecting the chunk only loses the cycle.
+IK_SATURATED_ROT = math.radians(6.0)  # rad, see ChunkPlanner.__init__
 
 
 class PlanRejected(RuntimeError):
@@ -373,15 +376,28 @@ class ChunkPlanner:
         tick = time.perf_counter()
         q_path = np.empty((self.steps, 16))
         q = q16.copy()
+        saturated_steps = 0
         for frame in range(self.steps):
             q, _ = self.pin.solve(q, eef[frame])
             position, rotation = self.pin.fk(q)
             p_error = np.linalg.norm(position - eef[frame, :, :3], axis=1)
             r_error = Rotation.from_matrix(Rotation.from_quat(eef[frame, :, 3:]).as_matrix()
                                            @ np.swapaxes(rotation, -1, -2)).magnitude()
-            if np.max(p_error) > 0.020 or np.max(r_error) > math.radians(2.0):
-                raise PlanRejected("IK unreachable at step %d: %.1f mm / %.2f deg"
-                                   % (frame, 1000 * np.max(p_error), math.degrees(np.max(r_error))))
+            # A saturated joint (the human wrist out-ranges TRON2's +/-0.7505 rad
+            # pitch and roll) leaves a residual the solver cannot remove.  That is
+            # a reach limit, not a solver failure: accept the closest reachable
+            # orientation up to IK_SATURATED_ROT and record it, but keep the tight
+            # bound when nothing is at a limit.
+            at_limit = np.flatnonzero(
+                (q[:14] <= self.pin.lower[:14] + 1e-6) | (q[:14] >= self.pin.upper[:14] - 1e-6))
+            rotation_bound = (IK_SATURATED_ROT if at_limit.size else math.radians(2.0))
+            if at_limit.size:
+                saturated_steps += 1
+            if np.max(p_error) > 0.020 or np.max(r_error) > rotation_bound:
+                raise PlanRejected("IK unreachable at step %d: %.1f mm / %.2f deg%s"
+                                   % (frame, 1000 * np.max(p_error), math.degrees(np.max(r_error)),
+                                      "" if not at_limit.size
+                                      else " (joints %s at their limit)" % at_limit.tolist()))
             q_path[frame] = q
         q_path[:, 14:] = q16[14:]
         # Stream the FK of the in-envelope joint path, as replay does, not the raw
@@ -403,7 +419,9 @@ class ChunkPlanner:
                                    "joints_at_limit": [int(j) for j in range(14)
                                                        if np.any(q_path[:, j] <= self.pin.lower[j] + 1e-3)
                                                        or np.any(q_path[:, j] >= self.pin.upper[j] - 1e-3)],
-                                   "limit_margin_rad": IK_LIMIT_MARGIN}
+                                   "limit_margin_rad": IK_LIMIT_MARGIN,
+                                   "saturated_steps": int(saturated_steps),
+                                   "saturated_rot_bound_deg": math.degrees(IK_SATURATED_ROT)}
         stage["ik_ms"] = 1000 * (time.perf_counter() - tick)
 
         start_eef = np.stack([np.asarray(snapshot["eef_command"][i], float) for i in range(2)])

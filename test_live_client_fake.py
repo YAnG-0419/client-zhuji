@@ -29,6 +29,9 @@ class FakeRobot:
 
     def _pose(self):
         sag = getattr(FakeRobot, "default_sag", 0.0)   # constant z droop under load
+        creep = getattr(FakeRobot, "default_creep", 0.0)
+        if creep:                                      # a droop that keeps growing
+            sag += creep * (time.monotonic() - FakeRobot.creep_from)
         pose = {s + "_position": list(self.eef[i, :3] - [0.0, 0.0, sag]) for i, s in enumerate(("left", "right"))}
         pose.update({s + "_quat": [self.eef[i, 6], *self.eef[i, 3:6]] for i, s in enumerate(("left", "right"))})
         return pose
@@ -184,7 +187,8 @@ def install_fakes(state, upper=None):
     return saved
 
 
-def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None, prefetch=0.0):
+def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None,
+             prefetch=0.0, creep=0.0):
     quat_module = types.ModuleType("replay_quat")
 
     class QuatTrack:
@@ -196,6 +200,8 @@ def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None, pre
     saved = install_fakes(state, upper)
     FakeRobot.default_track = robot_track
     FakeRobot.default_sag = sag
+    FakeRobot.default_creep = creep
+    FakeRobot.creep_from = time.monotonic()
     originals = (live_client.start_planner, live_client.CameraFeed,
                  live_client.validate_camera_info, live_client.camera_info_from_json)
     connection = FakeConnection(distance)
@@ -220,7 +226,9 @@ def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None, pre
                                          virtual_preset="cam0_newk", denoise_steps=10, arm_cap=0.8,
                                          hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
                                          settle=0.05, rate=300.0, max_failures=3, relay_port=28765,
-                                         speed_ratio=None, prefetch=prefetch, shaping=None)
+                                         speed_ratio=None, prefetch=prefetch, shaping=None,
+                                         anchor_mode=None, sag_comp="off",
+                                         sag_model=None)
             try:
                 live_client.run(args, Path(folder), result)
             except Exception as exc:
@@ -272,11 +280,18 @@ class LiveClientFakeHardwareTest(unittest.TestCase):
         self.assertIsNone(error)
         self.assertEqual(result["cycles_executed"], 2)
 
-    def test_sag_above_settle_gate_waits_then_holds(self):
-        began = time.monotonic()
+    def test_large_but_static_sag_keeps_running(self):
+        # 25 mm of steady droop is past the old 20 mm gate; the gate now asks
+        # whether the pose is still moving, and a settled arm is settled.
         result, error = run_fake(sag=0.025, cycles=2)
+        self.assertIsNone(error)
+        self.assertEqual(result["cycles_executed"], 2)
+
+    def test_a_drift_that_keeps_growing_waits_then_holds(self):
+        began = time.monotonic()
+        result, error = run_fake(sag=0.005, creep=0.01, cycles=2)
         self.assertIsInstance(error, RuntimeError)
-        self.assertIn("held pose stayed", str(error))
+        self.assertIn("kept moving", str(error))
         self.assertGreater(time.monotonic() - began, 3.0)      # waited, did not abort at once
         self.assertEqual(result["arm_stop"], "controller_hold")
 

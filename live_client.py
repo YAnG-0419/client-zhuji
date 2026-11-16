@@ -16,6 +16,7 @@ the controller holds in High-Level Dev mode; request_emgy_stop is never sent.
 from __future__ import annotations
 
 import argparse
+import collections
 import fcntl
 import json
 import math
@@ -41,6 +42,7 @@ for _path in (CLIENT, ROOT / "replay_hand", ROOT / "replay", ROOT / "tools", ROO
 from image_preprocess import camera_info_dict, camera_info_from_json, validate_camera_info  # noqa: E402
 from live_planner import worker_main  # noqa: E402
 from motion_shaping import build_splice  # noqa: E402
+import sag_model  # noqa: E402
 from deployment_audit import (AsyncAuditSink, ExecutionAuditRecorder,
                               SCHEMA as AUDIT_SCHEMA, build_run_summary)  # noqa: E402
 
@@ -51,7 +53,12 @@ EEF_TRACK_POS, EEF_TRACK_ROT = 0.04, 0.20      # replay_hand execution_cross lim
 # Before sampling the next chunk, keep holding until the arms are within
 # 2 cm / 3 deg of the command; abort only after 3 s of waiting.  Beyond the
 # 4 cm / 0.2 rad tracking guard the run stops immediately (checked every tick).
-HOLD_SETTLE_POS, HOLD_SETTLE_ROT, HOLD_SETTLE_TIMEOUT = 0.02, math.radians(3.0), 3.0
+# The hold gate watches for movement, not for a small offset: HOLD_SETTLE_CREEP_*
+# is how much the drift may still change over HOLD_SETTLE_WINDOW and count as
+# settled.  Static gravity sag passes at any size; the 4 cm / 0.2 rad tracking
+# guard is what bounds the size.
+HOLD_SETTLE_WINDOW, HOLD_SETTLE_TIMEOUT = 0.5, 3.0
+HOLD_SETTLE_CREEP_POS, HOLD_SETTLE_CREEP_ROT = 0.002, math.radians(0.5)
 COMMAND_STEP_POS, COMMAND_STEP_ROT = 0.006, 0.03  # per 300 Hz send; bug catcher
 OWNERS = ("wuji_teleop.switch", "wuji-teleop-switch", "tools/manus_teleop.sh", "robot_home.py",
           "axis_replay.py", "replay.py", "servo_test.py", "replay_hand.py",
@@ -412,6 +419,20 @@ class StepGate:
         return None
 
 
+def load_sag_model(args):
+    """The measured gravity-sag model, or None when compensation is off."""
+    if args.sag_comp != "on":
+        return None
+    path = Path(args.sag_model) if args.sag_model else CLIENT / "sag_model.json"
+    if not path.is_file():
+        raise RuntimeError("no sag model at %s; build one with sag_model.py --out" % path)
+    model = json.loads(path.read_text())
+    worst = max(model["sides"][side]["residual_mm"]["p95"] for side in ("left", "right"))
+    print("SAG COMPENSATION on (%s, p95 residual %.1f mm, capped at %.0f mm)"
+          % (path.name, worst, 1000 * model.get("max_compensation_m", 0.035)), flush=True)
+    return model
+
+
 def start_planner(args):
     context = multiprocessing.get_context("spawn")
     parent, child = context.Pipe()
@@ -468,6 +489,9 @@ def run(args, out, result):
         commands = process_commands()
         if any(owner in c for c in commands for owner in OWNERS):
             raise RuntimeError("another robot controller is running; exit teleop/home/replay first")
+        sag = load_sag_model(args)
+        result["sag_compensation"] = None if sag is None else {
+            side: sag["sides"][side]["residual_mm"] for side in ("left", "right")}
         print("Starting planner (XFlow %s, task %s) ..." % (args.model, args.task), flush=True)
         planner, connection, describe = start_planner(args)
         result["planner"] = describe
@@ -535,10 +559,10 @@ def run(args, out, result):
             if recovered is not None:
                 start_eef = recovered
         command_eef, command_q20 = start_eef.copy(), q20_start.copy()
-        last_sent = None
+        last_sent = None; last_q16 = q0.copy()
         chunk = None; exec_start = 0.0; chunk_q16_start = q0.copy()
         settle_since = time.monotonic(); pending = None; pending_sample = None
-        hold_waiting = False
+        hold_waiting = False; drift_history = collections.deque()
         ready_plan = None; ready_start = None; ready_sample = None; gate = StepGate()
         planner_caps = dict(describe["caps"], **describe["accel_caps"])
         cycle = failures = plan_sequence = 0
@@ -560,23 +584,29 @@ def run(args, out, result):
                         command_q20 = np.array([hands.feedback()[s] for s in SIDES])
                     finish_execution_audit("completed", True)
                     chunk = None; camera.set_execution_active(False)
-                    settle_since = now
+                    settle_since = now; drift_history.clear()
                     cycle += 1
                     if args.cycles and cycle >= args.cycles:
                         stop_reason = "requested cycles completed"
             if chunk is None:
                 target_eef, target_q20 = command_eef, command_q20
             if args.execute:
-                check_servop_box(target_eef)
+                # Gravity sag compensation, if enabled: stream a pose offset by the
+                # measured droop so the arm settles on target_eef.  Everything else
+                # (guards, anchoring, audit) keeps using the uncompensated target, so
+                # the tracking error it reports is the error against what we meant.
+                sent_eef = (target_eef if sag is None
+                            else sag_model.compensate(sag, target_eef, last_q16))
+                check_servop_box(sent_eef)
                 if last_sent is not None:
-                    step_p, step_r = pose_errors(target_eef, last_sent)
+                    step_p, step_r = pose_errors(sent_eef, last_sent)
                     if max(step_p) > COMMAND_STEP_POS or max(step_r) > COMMAND_STEP_ROT:
                         raise RuntimeError("command step %.4f m / %.4f rad exceeds bound" % (max(step_p), max(step_r)))
-                left, right = quat(target_eef)
+                left, right = quat(sent_eef)
                 robot.send("request_servop", {"left_pos": left.tolist(), "right_pos": right.tolist()})
                 robot.commands_sent += 1
                 robot.lease_at = time.monotonic()
-                last_sent = target_eef.copy()
+                last_sent = sent_eef.copy()
                 if execution_audit is not None:
                     execution_audit.record_send(now - exec_start, target_eef)
 
@@ -584,6 +614,7 @@ def run(args, out, result):
             if now - last_tick >= 0.02:
                 last_tick = now
                 q, dq, _, _ = session.tick(None, chunk_q16_start, chunk_q16_start)
+                last_q16 = q
                 measured_eef = sdk_pose_xyzw(robot.pose)
                 if args.execute:
                     ep, er = pose_errors(measured_eef, target_eef)
@@ -610,11 +641,13 @@ def run(args, out, result):
                     raise RuntimeError("camera: " + str(camera.error))
 
                 # Request the next chunk once the robot has settled in hold.
-                # Hold-settle gate (operator decision 2026-11-15): the loaded arms sag
-                # 1-2 cm below the ServoP command at rest and settle after each chunk,
-                # so exceeding HOLD_SETTLE_POS/ROT first means "keep holding and wait";
-                # it aborts after HOLD_SETTLE_TIMEOUT, or at once beyond the 4 cm
-                # tracking guard checked above every tick.
+                # Hold-settle gate: the loaded arms sag 1.5-2.5 cm below the ServoP
+                # command at rest, and that offset grows as the arm extends, so the
+                # gate asks "has the pose stopped moving" rather than "has it reached
+                # the command" (measured 2026-11-17: the sag is static to 0.5 mm while
+                # a real runaway keeps growing).  A drift that is still changing waits,
+                # then aborts after HOLD_SETTLE_TIMEOUT; the 4 cm / 0.2 rad tracking
+                # guard above still runs every tick and is unchanged.
                 hold_ready = False
                 prefetch_ready = (args.prefetch > 0.0 and args.execute and chunk is not None
                                   and pending is None and ready_plan is None
@@ -625,14 +658,29 @@ def run(args, out, result):
                     hold_ready = True
                     if args.execute:
                         drift_p, drift_r = pose_errors(measured_eef, command_eef)
-                        if max(drift_p) > HOLD_SETTLE_POS or max(drift_r) > HOLD_SETTLE_ROT:
+                        drift_history.append((now, max(drift_p), max(drift_r)))
+                        while drift_history and now - drift_history[0][0] > HOLD_SETTLE_WINDOW:
+                            drift_history.popleft()
+                        spread_p = max(d[1] for d in drift_history) - min(d[1] for d in drift_history)
+                        spread_r = max(d[2] for d in drift_history) - min(d[2] for d in drift_history)
+                        static = (len(drift_history) >= 2
+                                  and now - drift_history[0][0] >= HOLD_SETTLE_WINDOW * 0.5
+                                  and spread_p < HOLD_SETTLE_CREEP_POS
+                                  and spread_r < HOLD_SETTLE_CREEP_ROT)
+                        if not static:
                             hold_ready = False
                             if now - settle_since > HOLD_SETTLE_TIMEOUT:
-                                raise RuntimeError("held pose stayed %.3f m / %.3f rad from the command for %.1f s"
-                                                   % (max(drift_p), max(drift_r), HOLD_SETTLE_TIMEOUT))
+                                raise RuntimeError(
+                                    "held pose kept moving: %.1f mm / %.1f deg from the command, "
+                                    "still changing by %.1f mm / %.1f deg over %.1f s"
+                                    % (1000 * max(drift_p), math.degrees(max(drift_r)),
+                                       1000 * spread_p, math.degrees(spread_r),
+                                       HOLD_SETTLE_WINDOW))
                             if not hold_waiting:
-                                print("  hold settling: %.1f mm / %.1f deg from command, waiting"
-                                      % (1000 * max(drift_p), math.degrees(max(drift_r))), flush=True)
+                                print("  hold settling: %.1f mm / %.1f deg from command "
+                                      "(moving %.1f mm), waiting"
+                                      % (1000 * max(drift_p), math.degrees(max(drift_r)),
+                                         1000 * spread_p), flush=True)
                             hold_waiting = True
                 if hold_ready or prefetch_ready:
                     hold_waiting = False
@@ -680,7 +728,7 @@ def run(args, out, result):
                         print("PLAN REJECTED (%d/%d): %s" % (failures, args.max_failures, answer["reason"]), flush=True)
                         if failures >= args.max_failures:
                             stop_reason = "too many consecutive rejected plans"
-                        settle_since = time.monotonic()
+                        settle_since = time.monotonic(); drift_history.clear()
                     else:
                         failures = 0
                         plan = answer["plan"]
@@ -714,7 +762,7 @@ def run(args, out, result):
                             row["anchor"]["right"]["t_mm"], row["anchor"]["right"]["r_deg"]), flush=True)
                         if moved:
                             row["discarded"] = "robot moved since the sample"
-                            settle_since = time.monotonic()
+                            settle_since = time.monotonic(); drift_history.clear()
                         else:
                             ready_plan = plan
                             ready_sample = pending_sample
@@ -728,7 +776,7 @@ def run(args, out, result):
                     if decision == "quit":
                         stop_reason = "operator quit"
                     elif decision == "skip":
-                        ready_plan = None; settle_since = time.monotonic()
+                        ready_plan = None; settle_since = time.monotonic(); drift_history.clear()
                     elif decision == "go":
                         plan_to_execute = ready_plan
                         spliced = None
@@ -910,6 +958,10 @@ def main():
                              "fit bias then accumulates); constant keeps the measured-vs-fit "
                              "offset so only the model's relative motion is followed; "
                              "default from deployment_config.json")
+    parser.add_argument("--sag-comp", choices=("off", "on"), default="off",
+                        help="offset the streamed pose by the measured gravity sag so the "
+                             "arm settles on the planned pose (default off)")
+    parser.add_argument("--sag-model", default=None, help="default: client/sag_model.json")
     parser.add_argument("--rate", type=float, default=300.0)
     parser.add_argument("--max-failures", type=int, default=3)
     parser.add_argument("--relay-port", type=int, default=28765)
