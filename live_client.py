@@ -422,7 +422,8 @@ def start_planner(args):
                   hand_cap=args.hand_cap, linear_cap=args.linear_cap,
                   angular_cap=args.angular_cap, num_inference_steps=args.denoise_steps,
                   steps=args.steps, speed_ratio=args.speed_ratio,
-                  shaping=None if args.shaping is None else {"enabled": args.shaping == "on"})
+                  shaping=None if args.shaping is None else {"enabled": args.shaping == "on"},
+                  anchor_mode=args.anchor_mode)
     process = context.Process(target=worker_main, args=(child, kwargs), daemon=True)
     process.start()
     if not parent.poll(180):
@@ -904,6 +905,11 @@ def main():
                              "F of the running one and splices the result in")
     parser.add_argument("--shaping", choices=("off", "on"), default=None,
                         help="ease-in/out + acceleration caps; default from deployment_config.json")
+    parser.add_argument("--anchor-mode", choices=("decay", "constant", "none"), default=None,
+                        help="decay drives the hand onto the fitted pose each chunk (a constant "
+                             "fit bias then accumulates); constant keeps the measured-vs-fit "
+                             "offset so only the model's relative motion is followed; "
+                             "default from deployment_config.json")
     parser.add_argument("--rate", type=float, default=300.0)
     parser.add_argument("--max-failures", type=int, default=3)
     parser.add_argument("--relay-port", type=int, default=28765)

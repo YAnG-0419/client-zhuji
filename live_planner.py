@@ -16,7 +16,7 @@ import time
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from execution_postprocess import (apply_local_anchor,
+from execution_postprocess import (ANCHOR_MODES, apply_local_anchor,
                                    smooth_q_trajectory, smooth_root_trajectory,
                                    validate_execution_config)
 from hand_retarget_wuji2 import Wuji2StreamingRetargeter
@@ -138,7 +138,7 @@ class ChunkPlanner:
                  relay_port=28765, image_mode="virtual_cam0", virtual_preset="cam0_newk",
                  arm_cap=0.8, hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
                  num_inference_steps=10, steps=32, speed_ratio=None,
-                 shaping=None):
+                 shaping=None, anchor_mode=None):
         self.root = Path(root).resolve()
         self.config_path = Path(config_path).resolve()
         self.config = json.loads(self.config_path.read_text())
@@ -167,6 +167,16 @@ class ChunkPlanner:
                 or all(v > 0 for v in self.accel_caps.values())):
             raise ValueError("invalid motion shaping parameters")
         self.all_caps = dict(self.caps, **self.accel_caps)
+        # Anchor policy.  "decay" drives the hand from its measured pose onto the
+        # fitted pose inside each chunk, so any constant fit bias (camera depth
+        # scale, head pitch) is re-applied every chunk and the hand creeps.
+        # "constant" keeps the measured-vs-fit offset for the whole chunk, so the
+        # robot follows only the model's relative motion.
+        anchor = self.config["execution"].get("anchor", {})
+        self.anchor_mode = str(anchor_mode or anchor.get("mode", "decay"))
+        if self.anchor_mode not in ANCHOR_MODES:
+            raise ValueError("anchor mode must be one of %s" % sorted(ANCHOR_MODES))
+        self.anchor_hand_q = bool(anchor.get("apply_to_hand_q", True))
         if not 2 <= int(steps) <= 32:
             raise ValueError("steps must be within [2,32]")
         self.steps = int(steps)
@@ -219,6 +229,7 @@ class ChunkPlanner:
 
     def describe(self):
         return {"shaping": self.shaping, "accel_caps": self.accel_caps,
+                "anchor_mode": self.anchor_mode,
                 "model": self.model_name, "deployment_id": self.deployment_id,
                 "contract": self.timing.contract, "task": self.task,
                 "root_mode": self.root_mode, "root_mode_reason": self.root_reason,
@@ -345,7 +356,8 @@ class ChunkPlanner:
                 Rotation.from_matrix(offset[:3, :3]).magnitude())
             roots[:, side_index], q20[:, side_index], anchor = apply_local_anchor(
                 smooth_root, smooth_q, command_root[side], command_q20[side_index],
-                self.mapping.limits[side], mode="decay", decay_steps=steps, apply_to_hand_q=True)
+                self.mapping.limits[side], mode=self.anchor_mode, decay_steps=steps,
+                apply_to_hand_q=self.anchor_hand_q)
             anchor.pop("weights", None)
             anchor["budget_saturated"] = saturated
             anchors[side] = anchor

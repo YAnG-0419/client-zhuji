@@ -211,6 +211,7 @@ def collect(run_dir: Path, client_dir: Path) -> dict:
         "contract": planner.get("contract"), "speed_ratio": planner.get("speed_ratio"),
         "image_mode": intrinsics_label,
         "shaping": planner.get("shaping") or {"enabled": False},
+        "anchor_mode": planner.get("anchor_mode"),
         "prefetch": (result.get("args") or {}).get("prefetch") or 0,
         "execute": result.get("execute"), "stop_reason": result.get("stop_reason"),
         "error": result.get("error"), "arm_commands": result.get("arm_motion_commands_sent"),
@@ -290,21 +291,27 @@ let cycle = 0, side = 0, step = 0;
 const $ = id => document.getElementById(id);
 const fmt = (v,d=2) => (v==null||!isFinite(v)) ? '–' : (+v).toFixed(d);
 
-function setup(){
+function renderMeta(){
   $('run').textContent = DATA.run;
   $('meta').innerHTML = [
     ['模型', DATA.model], ['任务', DATA.task], ['契约', DATA.contract],
     ['speed_ratio', DATA.speed_ratio], ['图像', DATA.image_mode],
     ['平滑', DATA.shaping && DATA.shaping.enabled ? 'on' : 'off'],
+    ['锚定', DATA.anchor_mode],
     ['预取', DATA.prefetch ? DATA.prefetch : 'off'],
     ['真机执行', DATA.execute ? '是' : '影子'],
     ['停止原因', DATA.stop_reason || DATA.error || '—'],
   ].filter(p => p[1] !== undefined && p[1] !== null)
    .map(p => p[0]+' <b>'+p[1]+'</b>').join(' · ');
+}
+
+function setup(){
+  renderMeta();
   buildTable();
   $('step').oninput = e => { step = +e.target.value; drawCam(); };
   $('side').onchange = e => { side = +e.target.value; drawAll(); };
-  select(0);
+  if (DATA.cycles.length) select(0);
+  else $('cyclelabel').textContent = '等待第一段…';
 }
 
 function buildTable(){
@@ -343,10 +350,14 @@ function select(i){
   drawAll();
 }
 
-function drawAll(){ drawCam(); drawPos(); drawErr(); drawWrist(); drawHand(); }
+function drawAll(){
+  if (!DATA.cycles[cycle]) return;
+  drawCam(); drawPos(); drawErr(); drawWrist(); drawHand();
+}
 
 function drawCam(){
   const c = DATA.cycles[cycle], cv = $('cam'), g = cv.getContext('2d');
+  if (!c) return;
   g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,cv.width,cv.height);
   g.fillStyle = '#0b0e13'; g.fillRect(0,0,cv.width,cv.height);
   const paint = () => {
@@ -469,15 +480,22 @@ function drawHand(){
 }
 
 setup();
+__LIVE__
 </script>
 """
 
 
+def page(payload: dict, live_script: str = "") -> str:
+    """The whole report as one HTML string; live_monitor injects its own script."""
+    return (TEMPLATE.replace("__RUN__", str(payload.get("run", "")))
+            .replace("__BONES__", json.dumps(BONES))
+            .replace("__LIVE__", live_script)
+            .replace("__DATA__", json.dumps(payload, ensure_ascii=False, allow_nan=False)))
+
+
 def render(run_dir: Path, client_dir: Path, output: Path) -> Path:
     payload = collect(run_dir, client_dir)
-    html = (TEMPLATE.replace("__RUN__", payload["run"])
-            .replace("__BONES__", json.dumps(BONES))
-            .replace("__DATA__", json.dumps(payload, ensure_ascii=False, allow_nan=False)))
+    html = page(payload, "")
     output.write_text(html, encoding="utf-8")
     return output
 
