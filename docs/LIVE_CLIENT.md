@@ -6,8 +6,10 @@
 
    ```bash
    cd /Users/lpy/Documents/ws/Xflow/zhuji-client
-   ./mac_relay.sh xflow-4srv-hh15k-rb30k-5090-1115/flower-hh   # <任务>/<服务>；单服务任务只写任务名
-   # 脚本从该服务的 endpoint.json 读 host 和 port
+   ./mac_relay.sh xflow-new200-30k-1117            # 该任务的全部 checkpoint，一个一个端口
+   ./mac_relay.sh xflow-new200-30k-1117/step-30k   # 只开其中一个
+   # 参数是 b300 上 outputs/ 下的输出目录名（submit 工具会打印），不一定等于 squeue 里的任务名。
+   # 脚本自己读每个服务的 endpoint.json；本地端口对齐服务端口：18765..18768 -> 28765..28768
    ```
 
    看到 `relay ready on zhuji 127.0.0.1:28765` 后保持这个终端开着。
@@ -19,6 +21,8 @@
    bash client/run_xflow_live.sh --task flower --cycles 3             # 影子模式：不发任何命令
    bash client/run_xflow_live.sh --task flower --execute --step       # 真机，每个 chunk 前按 Enter
    bash client/run_xflow_live.sh --task flower --execute              # 真机连续运行，Ctrl-C 停
+   # 同一任务开了多个 checkpoint 时，用 --relay-port 选一个（28765=第1个，28766=第2个 …）：
+   bash client/run_xflow_live.sh --task flower --execute --relay-port 28766
    ```
 
    没有在运行的 Wuji 驱动时，client 会自己启动（电机默认不使能）；`--execute` 才会使能手、发 ServoP。
