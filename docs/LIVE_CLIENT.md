@@ -77,7 +77,7 @@ cd /home/guest/pengyang
 
 ## 常用参数
 
-`--model <名字>`（默认用服务的 default_model，一个服务一个模型时不用填）、`--speed-ratio R`（默认取服务端：hh 4、rb 1；同时决定历史帧间隔 round(训练历史帧×R) 和每步执行时间，范围 0.25–8）、`--virtual-preset cam0_newk|hh_435|hh_335`、
+`--model <名字>`（默认用服务的 default_model，一个服务一个模型时不用填）、`--speed-ratio R`（默认取服务端：hh 4、rb 1；某次训练要求别的值就显式写，例如 `--speed-ratio 2` → 历史帧 8、32 步 0.53 s；同时决定历史帧间隔 round(训练历史帧×R) 和每步执行时间，范围 0.25–8）、`--virtual-preset cam0_newk|hh_435|hh_335`、
 `--image-mode stretch_undistort`、`--steps N`（每个 chunk 只执行前 N 步）、`--denoise-steps 5`、
 `--arm-cap/--hand-cap/--linear-cap/--angular-cap`（只能调低到 replay 的上限以内）、
 `--shaping on|off`、`--prefetch F`。

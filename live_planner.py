@@ -107,6 +107,32 @@ def synchronized_step_times(arm_q, hand_q, eef, start_arm_q, start_hand_q, start
     return np.cumsum(durations), reasons
 
 
+def resolve_timing(model_info, requested_ratio=None):
+    """Return (speed_ratio, history frames at 30 fps) for one request.
+
+    speed_ratio = speed of the training motion / speed of the robot.  The
+    server applies it to the step times it returns; the history image offset
+    must follow the same ratio, so the client scales the model's own training
+    offset (humanhand 4, realrobot 16) by it.  Examples for humanhand:
+    ratio 4 -> 16 frames and 32 steps over 1.07 s; ratio 2 -> 8 frames and
+    32 steps over 0.53 s.
+    """
+    contract = model_info.get("contract")
+    default_ratio = model_info.get("speed_ratio")
+    if default_ratio is None:   # server older than 2026-11-15
+        default_ratio = 4.0 if contract == "humanhand" else 1.0
+    ratio = float(default_ratio if requested_ratio is None else requested_ratio)
+    if not 0.25 <= ratio <= 16.0:
+        raise ValueError("speed_ratio must be within [0.25, 16]")
+    training_history = model_info.get("training_history_offset_frames")
+    if training_history is None:
+        training_history = 4 if contract == "humanhand" else 16
+    frames = int(round(float(training_history) * ratio))
+    if frames < 1:
+        raise ValueError("speed_ratio %g leaves no history frame" % ratio)
+    return ratio, frames
+
+
 class ChunkPlanner:
     def __init__(self, root, config_path, *, model, task, relay_host="127.0.0.1",
                  relay_port=28765, image_mode="virtual_cam0", virtual_preset="cam0_newk",
@@ -152,20 +178,8 @@ class ChunkPlanner:
         self.model_name = self.client.model     # resolved default_model when None
         model_info = dict(info["models"][self.model_name])
         model_info.setdefault("fps", 30.0)
-        # speed_ratio = training-motion speed / robot speed (server 2026-11-15).
-        # Default comes from the server (hh 4, rb 1); history offset and step
-        # times both follow it.  Older servers have no speed_ratio: hh -> 4.
-        default_ratio = model_info.get("speed_ratio")
-        if default_ratio is None:
-            default_ratio = 4.0 if model_info.get("contract") == "humanhand" else 1.0
-        self.speed_ratio = float(default_ratio if speed_ratio is None else speed_ratio)
-        if not 0.25 <= self.speed_ratio <= 16.0:
-            raise ValueError("speed_ratio must be within [0.25, 16]")
+        self.speed_ratio, self.history_frames = resolve_timing(model_info, speed_ratio)
         self.request_speed_ratio = None if speed_ratio is None else self.speed_ratio
-        training_history = model_info.get("training_history_offset_frames")
-        if training_history is None:
-            training_history = 4 if model_info.get("contract") == "humanhand" else 16
-        self.history_frames = int(round(float(training_history) * self.speed_ratio))
         self.timing = ModelTiming.from_info(model_info)
         self.deployment_id = str(model_info["deployment_id"])
         self.client.reset()
