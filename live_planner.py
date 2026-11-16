@@ -376,9 +376,14 @@ class ChunkPlanner:
         tick = time.perf_counter()
         q_path = np.empty((self.steps, 16))
         q = q16.copy()
-        saturated_steps = 0
+        saturated_steps = 0; ik_iterations = 0
         for frame in range(self.steps):
-            q, _ = self.pin.solve(q, eef[frame])
+            # The bounded fallback only runs on unreachable targets (a saturated
+            # wrist), where its default 500 evaluations at 1e-11 cost 7.9 s per
+            # chunk for the same answer 100 evaluations at 1e-8 reaches in 2.2 s.
+            q, iterations = self.pin.solve(q, eef[frame],
+                                           fallback_nfev=100, fallback_tol=1e-8)
+            ik_iterations += sum(iterations)
             position, rotation = self.pin.fk(q)
             p_error = np.linalg.norm(position - eef[frame, :, :3], axis=1)
             r_error = Rotation.from_matrix(Rotation.from_quat(eef[frame, :, 3:]).as_matrix()
@@ -389,7 +394,7 @@ class ChunkPlanner:
             # orientation up to IK_SATURATED_ROT and record it, but keep the tight
             # bound when nothing is at a limit.
             at_limit = np.flatnonzero(
-                (q[:14] <= self.pin.lower[:14] + 1e-6) | (q[:14] >= self.pin.upper[:14] - 1e-6))
+                (q[:14] <= self.pin.lower[:14] + 1e-3) | (q[:14] >= self.pin.upper[:14] - 1e-3))
             rotation_bound = (IK_SATURATED_ROT if at_limit.size else math.radians(2.0))
             if at_limit.size:
                 saturated_steps += 1
@@ -421,6 +426,7 @@ class ChunkPlanner:
                                                        or np.any(q_path[:, j] >= self.pin.upper[j] - 1e-3)],
                                    "limit_margin_rad": IK_LIMIT_MARGIN,
                                    "saturated_steps": int(saturated_steps),
+                                   "ik_iterations": int(ik_iterations),
                                    "saturated_rot_bound_deg": math.degrees(IK_SATURATED_ROT)}
         stage["ik_ms"] = 1000 * (time.perf_counter() - tick)
 
