@@ -41,11 +41,26 @@ XFlow 推理 → free-root Wuji2 重定向（骨长归一化）→ 平滑（窗�
 手部限位；单步指令跳变 6 mm / 0.03 rad 以上视为程序错误。触发后一律停发、由控制器保持（见上）。规划被拒（重定向失败、IK 不可达、
 碰撞、超出 ServoP 工作空间）时继续保持并重新采样，连续 3 次被拒则停止。
 
+## 两个可开关的改进（默认都关，方便对比）
+
+**运动平滑** `--shaping on|off`（默认读配置 `execution.motion_shaping.enabled`，现为 off）。
+关：每段开头手指直接跳到速度上限、结尾从 0.4 rad/s 硬停（实测）。开：保留全部路点，只改每点的到达
+时间——首尾各 `ramp_s` 内按 smoothstep 加减速（首末步拉长约 2.8 倍），再整体放慢到加速度上限以内。
+用 82 段真实记录标定：典型段只被拉长约 1.26 倍，放慢系数 1.0；过于抖的段才会被放慢，超过
+`max_slowdown` 则拒绝该段。加速度上限不是厂家数据，是实测 p95 的约 1.2 倍。
+
+**预取拼接** `--prefetch F`（默认 0 = 停走式；0<F<1 表示当前段跑到 F 时就采样并请求下一段）。
+新段返回时按模型时间算出"已经走过多少"，丢掉这部分点，再用一段衰减的 Hermite 偏移让新段从当前
+位置和速度接上去。接不上（超出上限或没剩几步）就放弃拼接，等当前段跑完再重新采样。
+`--prefetch 0.5` 能去掉大部分停顿；`cycles.jsonl` 里每段记 `splice`（跳过步数、放慢系数、峰值）。
+注意：预取时观测是在运动中采的，锚定改为"采样时刻的指令位姿"，静止检查对该段不适用。
+
 ## 常用参数
 
 `--model <名字>`（默认用服务的 default_model，一个服务一个模型时不用填）、`--speed-ratio R`（默认取服务端：hh 4、rb 1；同时决定历史帧间隔 round(训练历史帧×R) 和每步执行时间，范围 0.25–8）、`--virtual-preset cam0_newk|hh_435|hh_335`、
 `--image-mode stretch_undistort`、`--steps N`（每个 chunk 只执行前 N 步）、`--denoise-steps 5`、
-`--arm-cap/--hand-cap/--linear-cap/--angular-cap`（只能调低到 replay 的上限以内）。
+`--arm-cap/--hand-cap/--linear-cap/--angular-cap`（只能调低到 replay 的上限以内）、
+`--shaping on|off`、`--prefetch F`。
 
 ## 产物
 

@@ -21,6 +21,7 @@ from execution_postprocess import (apply_local_anchor,
                                    validate_execution_config)
 from hand_retarget_wuji2 import Wuji2StreamingRetargeter
 from image_preprocess import ImagePreprocessor
+from motion_shaping import shape_timeline
 from online_core import DeploymentMapping
 from proprio import ProprioKinematics, camera_hand_to_sdk_eef
 from timing_policy import ModelTiming
@@ -110,7 +111,8 @@ class ChunkPlanner:
     def __init__(self, root, config_path, *, model, task, relay_host="127.0.0.1",
                  relay_port=28765, image_mode="virtual_cam0", virtual_preset="cam0_newk",
                  arm_cap=0.8, hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
-                 num_inference_steps=10, steps=32, speed_ratio=None):
+                 num_inference_steps=10, steps=32, speed_ratio=None,
+                 shaping=None):
         self.root = Path(root).resolve()
         self.config_path = Path(config_path).resolve()
         self.config = json.loads(self.config_path.read_text())
@@ -125,6 +127,20 @@ class ChunkPlanner:
                          linear_cap=float(linear_cap), angular_cap=float(angular_cap))
         if not all(np.isfinite(v) and v > 0 for v in self.caps.values()):
             raise ValueError("speed caps must be positive")
+        # Motion shaping (ease in/out + acceleration caps).  Off reproduces the
+        # previous velocity-capped timeline exactly, so runs can be compared.
+        shaping = dict(self.config["execution"].get("motion_shaping", {}), **(shaping or {}))
+        self.shaping = {"enabled": bool(shaping.get("enabled", False)),
+                        "ramp_s": float(shaping.get("ramp_s", 0.2)),
+                        "speed_floor": float(shaping.get("speed_floor", 0.35)),
+                        "max_slowdown": float(shaping.get("max_slowdown", 4.0))}
+        self.accel_caps = {key: float(shaping.get(key, default)) for key, default in (
+            ("arm_accel_cap", 20.0), ("hand_accel_cap", 40.0),
+            ("linear_accel_cap", 1.2), ("angular_accel_cap", 12.0))}
+        if not (0 < self.shaping["speed_floor"] <= 1.0 or self.shaping["ramp_s"] < 0
+                or all(v > 0 for v in self.accel_caps.values())):
+            raise ValueError("invalid motion shaping parameters")
+        self.all_caps = dict(self.caps, **self.accel_caps)
         if not 2 <= int(steps) <= 32:
             raise ValueError("steps must be within [2,32]")
         self.steps = int(steps)
@@ -188,7 +204,8 @@ class ChunkPlanner:
         self.processor_camera = None
 
     def describe(self):
-        return {"model": self.model_name, "deployment_id": self.deployment_id,
+        return {"shaping": self.shaping, "accel_caps": self.accel_caps,
+                "model": self.model_name, "deployment_id": self.deployment_id,
                 "contract": self.timing.contract, "task": self.task,
                 "root_mode": self.root_mode, "root_mode_reason": self.root_reason,
                 "image_mode": self.image_mode, "virtual_preset": self.virtual_preset,
@@ -372,6 +389,25 @@ class ChunkPlanner:
                             "speed_ratio": self.speed_ratio,
                             "stretch": float(times[-1] / step_times[-1]),
                             "binding": {name: reasons.count(name) for name in sorted(set(reasons))}}
+        if self.shaping["enabled"]:
+            # Keep the waypoints, change only when each is reached: ease out of
+            # and back into rest, then slow down for the acceleration caps.
+            try:
+                shaped = shape_timeline(
+                    np.diff(np.r_[0.0, times]),
+                    arm_q=np.vstack([q16[None, :14], q_path[:, :14]]),
+                    hand_q=np.concatenate([command_q20[None], q20]),
+                    eef=np.concatenate([start_eef[None], eef]),
+                    caps=self.all_caps, ramp_s=self.shaping["ramp_s"],
+                    speed_floor=self.shaping["speed_floor"],
+                    max_slowdown=self.shaping["max_slowdown"])
+            except ValueError as error:
+                raise PlanRejected("motion shaping: " + str(error))
+            times = shaped.times
+            report["timing"].update(duration_s=float(times[-1]),
+                                    stretch=float(times[-1] / step_times[-1]),
+                                    shaping_slowdown=shaped.slowdown,
+                                    shaped_peaks=shaped.peaks, eased=shaped.eased)
 
         tick = time.perf_counter()
         try:
@@ -384,7 +420,8 @@ class ChunkPlanner:
         stage["collision_ms"] = 1000 * (time.perf_counter() - tick)
         stage["total_ms"] = 1000 * (time.perf_counter() - began)
         report["stage_ms"] = stage
-        return {"times_s": times, "eef": eef, "q20": q20, "q16": q_path,
+        return {"times_s": times, "model_t": step_times, "eef": eef, "q20": q20,
+                "q16": q_path,
                 "predicted_keypoints": predicted.astype(np.float32),
                 "current_keypoints": points.astype(np.float32), "report": report,
                 "inference_trace": inference_trace}

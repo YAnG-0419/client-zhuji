@@ -119,7 +119,8 @@ class FakeCamera:
         pass
 
     def sample(self, not_before, frames):
-        return {"sample_ns": time.time_ns(), "head_rgb": np.zeros((2, 2, 3), np.uint8),
+        return {"sample_ns": time.time_ns(), "sample_monotonic": time.monotonic(),
+                "head_rgb": np.zeros((2, 2, 3), np.uint8),
                 "history_rgb": None, "history_missing_reason": "test", "camera_info": {}}
 
     def close(self):
@@ -144,7 +145,8 @@ class FakeConnection:
         eef = np.repeat(np.asarray(request["eef_command"])[None], 32, axis=0)
         eef[:, 0, 0] += np.linspace(0.0, self.distance, 32)
         return {"ok": True, "plan": {
-            "times_s": (np.arange(32) + 1) / 30.0, "eef": eef,
+            "times_s": (np.arange(32) + 1) / 30.0, "model_t": (np.arange(32) + 1) / 30.0,
+            "eef": eef,
             "q20": np.repeat(np.asarray(request["q20_command"])[None], 32, axis=0),
             "q16": np.zeros((32, 16)), "predicted_keypoints": np.zeros((32, 2, 21, 3)),
             "current_keypoints": np.zeros((2, 21, 3)),
@@ -182,7 +184,7 @@ def install_fakes(state, upper=None):
     return saved
 
 
-def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None):
+def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None, prefetch=0.0):
     quat_module = types.ModuleType("replay_quat")
 
     class QuatTrack:
@@ -199,7 +201,13 @@ def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None):
     connection = FakeConnection(distance)
     live_client.start_planner = lambda args: (types.SimpleNamespace(join=lambda timeout: None,
                                                                      is_alive=lambda: False),
-                                              connection, {"fake": True, "history_execution_frames": 16})
+                                              connection, {"fake": True, "history_execution_frames": 16,
+                                                   "caps": {"arm_cap": 0.8, "hand_cap": 0.9,
+                                                            "linear_cap": 0.25, "angular_cap": 1.0},
+                                                   "accel_caps": {"arm_accel_cap": 2.0,
+                                                                  "hand_accel_cap": 2.5,
+                                                                  "linear_accel_cap": 0.5,
+                                                                  "angular_accel_cap": 2.0}})
     live_client.CameraFeed = FakeCamera
     live_client.validate_camera_info = lambda a, b: {}
     live_client.camera_info_from_json = lambda path: {}
@@ -212,7 +220,7 @@ def run_fake(robot_track=True, distance=0.02, cycles=2, sag=0.0, upper=None):
                                          virtual_preset="cam0_newk", denoise_steps=10, arm_cap=0.8,
                                          hand_cap=0.9, linear_cap=0.25, angular_cap=1.0,
                                          settle=0.05, rate=300.0, max_failures=3, relay_port=28765,
-                                         speed_ratio=None)
+                                         speed_ratio=None, prefetch=prefetch, shaping=None)
             try:
                 live_client.run(args, Path(folder), result)
             except Exception as exc:
@@ -272,6 +280,17 @@ class LiveClientFakeHardwareTest(unittest.TestCase):
         self.assertGreater(time.monotonic() - began, 3.0)      # waited, did not abort at once
         self.assertEqual(result["arm_stop"], "controller_hold")
 
+
+    def test_prefetch_splices_without_stopping_between_chunks(self):
+        result, error = run_fake(prefetch=0.5, cycles=3)
+        self.assertIsNone(error)
+        self.assertEqual(result["cycles_executed"], 3)
+        self.assertEqual(result["arm_stop"], "controller_hold")
+
+    def test_prefetch_off_is_the_previous_stop_and_go_behaviour(self):
+        result, error = run_fake(prefetch=0.0, cycles=2)
+        self.assertIsNone(error)
+        self.assertEqual(result["cycles_executed"], 2)
 
     def test_large_envelope_excursion_stops_before_any_motion(self):
         upper = np.full(16, 3.0); upper[13] = -0.10          # measured 0.0 is 0.10 rad outside

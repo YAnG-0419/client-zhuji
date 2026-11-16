@@ -44,36 +44,173 @@
     "default": "virtual_cam0",
     "pixel_center_convention": "K_v is exactly diag(0.5,0.8,1) @ cam0_new_K as requested; compared with strict cv2.resize center mapping this keeps a documented +0.25 px x / +0.10 px y principal-point convention difference",
     "cam0": {
-      "source_size": [640, 400],
-      "K": [[305.5013, 0.0, 320.4261], [0.0, 305.4266, 203.6885], [0.0, 0.0, 1.0]],
-      "D": [-0.033319, 0.039518, 0.000424, 0.000207, -0.013876],
-      "new_K_alpha0": [[302.98651123046875, 0.0, 320.15414126550604], [0.0, 302.4835205078125, 203.41515968902968], [0.0, 0.0, 1.0]],
-      "roi_alpha0": [0, 0, 639, 399],
-      "virtual_K_320": [[151.49325561523438, 0.0, 160.07707063275302], [0.0, 241.98681640625, 162.73212775122374], [0.0, 0.0, 1.0]]
+      "source_size": [
+        640,
+        400
+      ],
+      "K": [
+        [
+          305.5013,
+          0.0,
+          320.4261
+        ],
+        [
+          0.0,
+          305.4266,
+          203.6885
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "D": [
+        -0.033319,
+        0.039518,
+        0.000424,
+        0.000207,
+        -0.013876
+      ],
+      "new_K_alpha0": [
+        [
+          302.98651123046875,
+          0.0,
+          320.15414126550604
+        ],
+        [
+          0.0,
+          302.4835205078125,
+          203.41515968902968
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "roi_alpha0": [
+        0,
+        0,
+        639,
+        399
+      ],
+      "virtual_K_320": [
+        [
+          151.49325561523438,
+          0.0,
+          160.07707063275302
+        ],
+        [
+          0.0,
+          241.98681640625,
+          162.73212775122374
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
     },
     "zhuji_live_reference": {
       "width": 640,
       "height": 480,
       "frame_id": "top_color_optical_frame",
       "distortion_model": "plumb_bob",
-      "K": [[387.6802062988281, 0.0, 326.43572998046875], [0.0, 386.7615661621094, 242.3768768310547], [0.0, 0.0, 1.0]],
-      "D": [-0.05416286736726761, 0.056861527264118195, 0.0009839670965448022, 0.0003474352415651083, -0.01834084279835224]
+      "K": [
+        [
+          387.6802062988281,
+          0.0,
+          326.43572998046875
+        ],
+        [
+          0.0,
+          386.7615661621094,
+          242.3768768310547
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "D": [
+        -0.05416286736726761,
+        0.056861527264118195,
+        0.0009839670965448022,
+        0.0003474352415651083,
+        -0.01834084279835224
+      ]
     },
     "zhuji_stretch": {
-      "new_K_alpha0": [[381.6348571777344, 0.0, 326.2175580088515], [0.0, 380.6568908691406, 242.3637789453005], [0.0, 0.0, 1.0]],
-      "roi_alpha0": [0, 0, 639, 479]
+      "new_K_alpha0": [
+        [
+          381.6348571777344,
+          0.0,
+          326.2175580088515
+        ],
+        [
+          0.0,
+          380.6568908691406,
+          242.3637789453005
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "roi_alpha0": [
+        0,
+        0,
+        639,
+        479
+      ]
     },
     "virtual_targets": {
       "source": "b300 release-humanhand-20261114/wan22/*.json index[*].intrinsics (exactly one K per part)",
       "hh_435": {
         "training_part": "HumanHand_A",
         "camera": "Orbbec 435 640x400 stretched to 320x320 (same raw K as server cam0)",
-        "K_320": [[152.7506561279297, 0.0, 159.9630584716797], [0.0, 244.34129333496094, 162.8507843017578], [0.0, 0.0, 1.0]]
+        "K_320": [
+          [
+            152.7506561279297,
+            0.0,
+            159.9630584716797
+          ],
+          [
+            0.0,
+            244.34129333496094,
+            162.8507843017578
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
       },
       "hh_335": {
         "training_part": "HumanHand_pose21",
         "camera": "Orbbec 335 1280x720 stretched to 320x320",
-        "K_320": [[171.4082489013672, 0.0, 160.35447692871094], [0.0, 304.79681396484375, 162.6405792236328], [0.0, 0.0, 1.0]]
+        "K_320": [
+          [
+            171.4082489013672,
+            0.0,
+            160.35447692871094
+          ],
+          [
+            0.0,
+            304.79681396484375,
+            162.6405792236328
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
       }
     },
     "archive_intrinsic_relative_limit": 0.005,
@@ -107,16 +244,44 @@
     "smoothing_window": 5,
     "speed_policy": "reject",
     "hand_joint_speed_limit_rad_s": 1.0,
-    "arm_joint_speed_limit_rad_s": 1.0
+    "arm_joint_speed_limit_rad_s": 1.0,
+    "motion_shaping": {
+      "enabled": false,
+      "note": "ease-in/out + acceleration caps; off reproduces the velocity-capped timeline for A/B runs",
+      "ramp_s": 0.2,
+      "speed_floor": 0.35,
+      "max_slowdown": 4.0,
+      "arm_accel_cap": 20.0,
+      "hand_accel_cap": 40.0,
+      "linear_accel_cap": 1.2,
+      "angular_accel_cap": 12.0,
+      "accel_cap_note": "not datasheet values: set ~1.2x the p95 demand measured over 82 recorded chunks, so typical plans are only eased (stretch ~1.26x) and a jerky plan is slowed down instead of refused",
+      "ramp_note": "ramp_s/speed_floor stretch the first and last step ~2.8x; measured p50 stretch 1.26x"
+    },
+    "prefetch": {
+      "default": 0.0,
+      "note": "CLI --prefetch overrides; 0 = stop-and-go, 0.5 = sample halfway through the running chunk"
+    }
   },
   "hand_retarget": {
     "root_mode": "auto",
     "max_nfev": 300,
-    "weights": {"other": 0.05, "wrist": 0.1, "tips": 1.0},
+    "weights": {
+      "other": 0.05,
+      "wrist": 0.1,
+      "tips": 1.0
+    },
     "temporal_first": 0.0001,
     "temporal_stream": 0.005,
     "fixed_outer_iterations": 4,
-    "palm_alignment_point_indices": [0, 1, 5, 9, 13, 17],
+    "palm_alignment_point_indices": [
+      0,
+      1,
+      5,
+      9,
+      13,
+      17
+    ],
     "palm_alignment_note": "URDF FK/Jacobian proves only point 0 is root-fixed; five finger-base points move with MCP flex, so kabsch_fixed_root aligns current-q FK (wrist plus five bases) and alternates Kabsch with a fixed-root q solve",
     "thresholds": {
       "max_tip_rmse_m": 0.02,
@@ -137,4 +302,3 @@
     "hardware_enabled": false
   }
 }
-

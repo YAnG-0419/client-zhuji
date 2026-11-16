@@ -40,6 +40,7 @@ for _path in (CLIENT, ROOT / "replay_hand", ROOT / "replay", ROOT / "tools", ROO
 
 from image_preprocess import camera_info_dict, camera_info_from_json, validate_camera_info  # noqa: E402
 from live_planner import worker_main  # noqa: E402
+from motion_shaping import build_splice  # noqa: E402
 from deployment_audit import (AsyncAuditSink, ExecutionAuditRecorder,
                               SCHEMA as AUDIT_SCHEMA, build_run_summary)  # noqa: E402
 
@@ -86,6 +87,40 @@ def slerp_xyzw(q0, q1, u):
         theta = math.acos(min(1.0, dot))
         out = (math.sin((1 - u) * theta) * q0 + math.sin(u * theta) * q1) / math.sin(theta)
     return out / np.linalg.norm(out)
+
+
+def splice_plan(active, exec_start, sample, plan, caps, *, lead_s=0.05):
+    """Continue the running chunk with a plan sampled while it was executing.
+
+    Returns ``{"plan", "start", "info"}`` shaped like a planner result so the
+    executor can swap in a new ChunkSampler, or ``None`` when the remaining plan
+    is unusable or cannot be connected inside the caps.
+    """
+    dispatch = time.monotonic() + lead_s - exec_start
+    moving = dispatch < active.duration - 1e-3
+    progress = active.model_at(min(dispatch, active.duration)) \
+        - active.model_at(sample["sample_monotonic"] - exec_start)
+    if progress < 0:
+        return None
+    current_eef, current_q20 = active(dispatch)
+    splice = build_splice(
+        progress_model_s=progress,
+        plan_model_t=np.asarray(plan["model_t"], float),
+        plan_eef=np.asarray(plan["eef"], float), plan_q20=np.asarray(plan["q20"], float),
+        plan_q16=np.asarray(plan["q16"], float), current_eef=current_eef,
+        current_q20=current_q20, current_eef_velocity=active.velocity(dispatch),
+        caps=caps, moving=moving)
+    if splice is None:
+        return None
+    spliced = dict(plan)
+    spliced.update(times_s=splice.times, model_t=splice.model_t, eef=splice.eef,
+                   q20=splice.q20, _start_model_t=float(progress))
+    spliced["report"] = dict(plan["report"], splice={
+        "progress_model_s": splice.progress_model_s, "skipped_points": splice.skipped_points,
+        "slowdown": splice.slowdown, "blend_s": splice.blend_s, "moving": moving,
+        "peaks": splice.peaks, "dispatch_into_chunk_s": float(dispatch)})
+    return {"plan": spliced, "start": (current_eef, current_q20),
+            "info": spliced["report"]["splice"]}
 
 
 def no_emergency_stop_transport(base):
@@ -223,13 +258,33 @@ def controller_hold(robot, result, reason, timeout_s=3.0):
 
 
 class ChunkSampler:
-    """Interpolates the commanded start pose and the planned steps on one clock."""
+    """Interpolates the commanded start pose and the planned steps on one clock.
 
-    def __init__(self, start_eef, start_q20, plan):
+    ``model_t`` is each point's time on the model's own timeline, measured from
+    the observation this chunk was planned from; prefetch uses it to work out
+    how much of a newly returned plan the robot has already covered.
+    """
+
+    def __init__(self, start_eef, start_q20, plan, *, start_model_t=0.0):
         self.times = np.r_[0.0, np.asarray(plan["times_s"], float)]
         self.eef = np.concatenate([np.asarray(start_eef, float)[None], np.asarray(plan["eef"], float)])
         self.q20 = np.concatenate([np.asarray(start_q20, float)[None], np.asarray(plan["q20"], float)])
+        model = plan.get("model_t")
+        model = np.asarray(plan["times_s"], float) if model is None else np.asarray(model, float)
+        self.model_t = np.r_[float(start_model_t), model[:len(self.times) - 1]]
         self.duration = float(self.times[-1])
+        self.exec_start = None      # set by the executor when streaming begins
+
+    def model_at(self, t):
+        return float(np.interp(min(max(float(t), 0.0), self.duration), self.times, self.model_t))
+
+    def velocity(self, t, step=0.02):
+        """Finite-difference EEF translation velocity [2,3] at ``t`` seconds."""
+        a = min(max(float(t) - 0.5 * step, 0.0), self.duration)
+        b = min(max(float(t) + 0.5 * step, 0.0), self.duration)
+        if b - a < 1e-6:
+            return np.zeros((2, 3))
+        return (self(b)[0][:, :3] - self(a)[0][:, :3]) / (b - a)
 
     def __call__(self, t):
         t = min(max(float(t), 0.0), self.duration)
@@ -323,7 +378,8 @@ class CameraFeed:
                     reason = "no image at the execution-clock offset"
                 else:
                     history = best
-        return {"sample_ns": int(current[0]), "head_rgb": current[2].copy(),
+        return {"sample_ns": int(current[0]), "sample_monotonic": float(current[1]),
+                "head_rgb": current[2].copy(),
                 "history_rgb": None if history is None else history[2].copy(),
                 "history_sample_ns": None if history is None else int(history[0]),
                 "history_missing_reason": reason, "camera_info": self.camera_info,
@@ -365,7 +421,8 @@ def start_planner(args):
                   virtual_preset=args.virtual_preset, arm_cap=args.arm_cap,
                   hand_cap=args.hand_cap, linear_cap=args.linear_cap,
                   angular_cap=args.angular_cap, num_inference_steps=args.denoise_steps,
-                  steps=args.steps, speed_ratio=args.speed_ratio)
+                  steps=args.steps, speed_ratio=args.speed_ratio,
+                  shaping=None if args.shaping is None else {"enabled": args.shaping == "on"})
     process = context.Process(target=worker_main, args=(child, kwargs), daemon=True)
     process.start()
     if not parent.poll(180):
@@ -481,7 +538,8 @@ def run(args, out, result):
         chunk = None; exec_start = 0.0; chunk_q16_start = q0.copy()
         settle_since = time.monotonic(); pending = None; pending_sample = None
         hold_waiting = False
-        ready_plan = None; ready_start = None; gate = StepGate()
+        ready_plan = None; ready_start = None; ready_sample = None; gate = StepGate()
+        planner_caps = dict(describe["caps"], **describe["accel_caps"])
         cycle = failures = plan_sequence = 0
         period = 1.0 / args.rate
         began = time.monotonic(); n = 0; last_tick = 0.0
@@ -557,6 +615,10 @@ def run(args, out, result):
                 # it aborts after HOLD_SETTLE_TIMEOUT, or at once beyond the 4 cm
                 # tracking guard checked above every tick.
                 hold_ready = False
+                prefetch_ready = (args.prefetch > 0.0 and args.execute and chunk is not None
+                                  and pending is None and ready_plan is None
+                                  and stop_reason is None
+                                  and now - exec_start >= args.prefetch * chunk.duration)
                 if (chunk is None and pending is None and ready_plan is None and stop_reason is None
                         and now - settle_since >= args.settle and np.max(abs(dq[:14])) < 0.05):
                     hold_ready = True
@@ -571,13 +633,21 @@ def run(args, out, result):
                                 print("  hold settling: %.1f mm / %.1f deg from command, waiting"
                                       % (1000 * max(drift_p), math.degrees(max(drift_r))), flush=True)
                             hold_waiting = True
-                if hold_ready:
+                if hold_ready or prefetch_ready:
                     hold_waiting = False
-                    image = camera.sample(settle_since + args.settle * 0.5, history_frames)
+                    not_before = (exec_start if prefetch_ready
+                                  else settle_since + args.settle * 0.5)
+                    image = camera.sample(not_before, history_frames)
                     if image is not None:
-                        anchor_q20 = hand_session.last.copy() if args.execute else measured_q20
+                        if prefetch_ready:
+                            # Sampled mid-motion: anchor to what was commanded at
+                            # that instant; build_splice realigns at dispatch.
+                            anchor_eef, anchor_q20 = chunk(image["sample_monotonic"] - exec_start)
+                        else:
+                            anchor_eef = command_eef.copy()
+                            anchor_q20 = hand_session.last.copy() if args.execute else measured_q20
                         snapshot = dict(image, q16=q.copy(), eef_measured=measured_eef,
-                                        q20_measured=measured_q20, eef_command=command_eef.copy(),
+                                        q20_measured=measured_q20, eef_command=anchor_eef,
                                         q20_command=anchor_q20)
                         plan_id = plan_sequence
                         plan_sequence += 1
@@ -587,7 +657,10 @@ def run(args, out, result):
                                               eef_command=command_eef.copy(), q20_command=np.array(anchor_q20),
                                               history=image["history_rgb"] is not None,
                                               history_reason=image["history_missing_reason"],
-                                              plan_id=plan_id, snapshot=snapshot)
+                                              plan_id=plan_id, snapshot=snapshot,
+                                              prefetch=bool(prefetch_ready),
+                                              sample_monotonic=image["sample_monotonic"],
+                                              sample_chunk=chunk, sample_exec_start=exec_start)
 
                 if pending is not None and connection.poll():
                     answer = connection.recv()
@@ -627,9 +700,12 @@ def run(args, out, result):
                                             predicted_keypoints=plan["predicted_keypoints"],
                                             current_keypoints=plan["current_keypoints"])
                         row["targets_npz"] = str(targets_path)
-                        drift_p, drift_r = pose_errors(measured_eef, pending_sample["eef"])
-                        moved = max(drift_p) > 0.003 or max(drift_r) > math.radians(1.5) or \
-                            np.max(abs(measured_q20 - pending_sample["q20"])) > 0.08
+                        if pending_sample["prefetch"]:
+                            moved = False   # expected: the splice realigns at dispatch
+                        else:
+                            drift_p, drift_r = pose_errors(measured_eef, pending_sample["eef"])
+                            moved = max(drift_p) > 0.003 or max(drift_r) > math.radians(1.5) or \
+                                np.max(abs(measured_q20 - pending_sample["q20"])) > 0.08
                         print("PLAN %03d  rtt %.0f ms  plan %.2f s  chunk %.2f s (x%.2f %s)  anchor L %.1fmm/%.1fdeg R %.1fmm/%.1fdeg" % (
                             cycle, rep["rpc"]["round_trip_ms"], latency, rep["timing"]["duration_s"],
                             rep["timing"]["stretch"], rep["timing"]["binding"],
@@ -640,6 +716,7 @@ def run(args, out, result):
                             settle_since = time.monotonic()
                         else:
                             ready_plan = plan
+                            ready_sample = pending_sample
                             ready_start = (pending_sample["eef_command"], pending_sample["q20_command"])
                             if args.step:
                                 gate.ask("cycle %d ready" % cycle)
@@ -652,16 +729,41 @@ def run(args, out, result):
                     elif decision == "skip":
                         ready_plan = None; settle_since = time.monotonic()
                     elif decision == "go":
-                        # Start exactly where the plan was anchored (same commanded pose/q20).
                         plan_to_execute = ready_plan
-                        chunk = ChunkSampler(ready_start[0], ready_start[1], plan_to_execute)
-                        ready_plan = None
+                        spliced = None
+                        if ready_sample["prefetch"] and chunk is not None:
+                            spliced = splice_plan(chunk, exec_start, ready_sample,
+                                                  plan_to_execute, planner_caps)
+                            if spliced is None:
+                                print("  splice not possible; letting the chunk finish first",
+                                      flush=True)
+                        if spliced is not None:
+                            finish_execution_audit("spliced", True)
+                            cycle += 1
+                            if args.cycles and cycle >= args.cycles:
+                                stop_reason = "requested cycles completed"
+                            plan_to_execute = spliced["plan"]
+                            start_eef_q20 = spliced["start"]
+                            row_splice = spliced["info"]
+                            print("  SPLICE at %.2f s: skipped %d steps, %.2f s left%s"
+                                  % (time.monotonic() - exec_start, row_splice["skipped_points"],
+                                     float(plan_to_execute["times_s"][-1]),
+                                     "" if row_splice["moving"] else " (from rest)"), flush=True)
+                        elif ready_sample["prefetch"]:
+                            ready_plan = None; ready_sample = None
+                            continue       # wait for the running chunk, then re-sample
+                        else:
+                            start_eef_q20 = ready_start
+                        # Start exactly where the plan was anchored (same commanded pose/q20).
+                        chunk = ChunkSampler(start_eef_q20[0], start_eef_q20[1], plan_to_execute,
+                                             start_model_t=plan_to_execute.get("_start_model_t", 0.0))
+                        ready_plan = None; ready_sample = None
                         exec_start = time.monotonic(); chunk_q16_start = q.copy()
                         execution_audit = ExecutionAuditRecorder(
                             out, plan_to_execute["_plan_id"], plan_to_execute,
-                            ready_start[0], ready_start[1], q.copy(), execute=args.execute,
+                            start_eef_q20[0], start_eef_q20[1], q.copy(), execute=args.execute,
                             arm_rate_hz=args.rate,
-                            plan_artifact=plan_to_execute["_plan_artifact"],
+                            plan_artifact=plan_to_execute.get("_plan_artifact"),
                             eef_position_limit_m=EEF_TRACK_POS,
                             eef_rotation_limit_rad=EEF_TRACK_ROT)
                         camera.set_execution_active(True)
@@ -676,6 +778,26 @@ def run(args, out, result):
                 continue
             while time.monotonic() < deadline:
                 time.sleep(min(0.0005, max(0.0, deadline - time.monotonic())))
+        if chunk is not None and stop_reason == "requested cycles completed":
+            remaining = chunk.duration - (time.monotonic() - exec_start)
+            if remaining > 0:
+                print("  finishing the last chunk (%.2f s)" % remaining, flush=True)
+            while time.monotonic() - exec_start < chunk.duration:
+                now = time.monotonic()
+                target_eef, target_q20 = chunk(now - exec_start)
+                if args.execute:
+                    left, right = quat(target_eef)
+                    robot.send("request_servop", {"left_pos": left.tolist(),
+                                                  "right_pos": right.tolist()})
+                    robot.commands_sent += 1
+                    robot.lease_at = time.monotonic()
+                if now - last_tick >= 0.02:
+                    last_tick = now
+                    session.tick(None, chunk_q16_start, chunk_q16_start)
+                    if args.execute:
+                        hand_session.tick(target_q20, "xflow_exec")
+                time.sleep(1.0 / args.rate)
+            finish_execution_audit("completed", True)
         result["stop_reason"] = stop_reason
         result["cycles_executed"] = cycle
         print("STOPPING: " + stop_reason, flush=True)
@@ -777,12 +899,19 @@ def main():
     parser.add_argument("--linear-cap", type=float, default=0.25, help="planned EEF speed cap m/s")
     parser.add_argument("--angular-cap", type=float, default=1.0, help="planned EEF angular cap rad/s")
     parser.add_argument("--settle", type=float, default=0.2, help="hold time before sampling, s")
+    parser.add_argument("--prefetch", type=float, default=0.0,
+                        help="0 = stop-and-go (default); 0<F<1 samples the next chunk after "
+                             "F of the running one and splices the result in")
+    parser.add_argument("--shaping", choices=("off", "on"), default=None,
+                        help="ease-in/out + acceleration caps; default from deployment_config.json")
     parser.add_argument("--rate", type=float, default=300.0)
     parser.add_argument("--max-failures", type=int, default=3)
     parser.add_argument("--relay-port", type=int, default=28765)
     args = parser.parse_args()
     if args.speed_ratio is not None and not 0.25 <= args.speed_ratio <= 8.0:
         parser.error("--speed-ratio must be within [0.25, 8] (history must fit the 6 s camera buffer)")
+    if not 0.0 <= args.prefetch < 0.95:
+        parser.error("--prefetch must be within [0, 0.95)")
     if not 50 <= args.rate <= 500 or not 2 <= args.steps <= 32 or args.cycles < 0:
         parser.error("invalid rate/steps/cycles")
     if not (0 < args.arm_cap <= 1.0 and 0 < args.hand_cap <= 1.0 and 0 < args.linear_cap <= 0.5
